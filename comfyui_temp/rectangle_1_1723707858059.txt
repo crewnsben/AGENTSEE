@@ -1,0 +1,6 @@
+Edpreble — 08/11/2024 2:40 PM
+Got it. Thank you. What is minimum wait time before I should consider sending the first request?  I haven't seen a video render in less than a few minutes. Does the length of the video mater? 
+Charles - Argil — 08/11/2024 3:22 PM
+The generation time does not depend on the video length because we parallelize it by little sequence. But it will get much faster in the coming month. For testing purpose you can just loop polling our api from the moment you made the request. If your setup expend later we'll recommand using our webhook to receive a POST request on your server any time a project is generated
+Edpreble — 08/11/2024 4:12 PM
+Thanks. I've already set up the webhook to receive a POST from you.  But I'm a little unclear on how the extrasFilters work. I read the documentation several times.  Can you please give me some examples of Key-value pairs that could be used there?tbh

@@ -1,0 +1,46 @@
+
+You sent
+needs some cleanup, but image primitive and whisper primites are in
+You sent
+some aesthtics need to be fixed
+Evangelos Koutsioumpas replied to you
+YESSSSSS!!!
+Evangelos Koutsioumpas
+🫡🫡🫡🫡🫡
+Evangelos Koutsioumpas
+It will RIPPPP
+Evangelos Koutsioumpas replied to you
+Well I guess just ratios but that is a tomorrow thing
+You sent
+the other thing i need to fix is like the placement
+You sent
+the ratios worked but it was too big and when i reduced it it blew it up
+Evangelos Koutsioumpas replied to you
+I can take a look, my Claude got some energy left for today
+Evangelos Koutsioumpas
+Like zoom on each new image and zoom out on the total
+Evangelos Koutsioumpas
+Automatically
+Evangelos Koutsioumpas
+Yo the indexes under each image
+Evangelos Koutsioumpas
+The aesthetic is gonna riiiiiip
+You sent
+You sent
+no the issue is i didnt set up scroll yet on the images
+You sent
+yea thats all easy to fix and we can get more images and scale and shit
+You sent
+or do somethign crazy to em
+You sent
+what i need from you
+You sent
+is to figure out what the whisper text looks like when it hits to folder for the event listener
+You sent
+like how much text per input
+You sent
+hows it stucutred
+You sent
+you know so i cna make sure this code handkes it
+You sent
+like if we cutt it to a specific word count every time we cna probably dial it in aestheiclaly nice, but this thing can actually take a lot of text

@@ -1,0 +1,21 @@
+server-1  | server-1  | New client connected: qyuujKSuJCvsrOAyAAAB
+server-1  | server-1  | User joined: {"id":1,"username":"user1"}                                       
+server-1  | New rectangle added. Total rectangles: 1, Index: 0                                         
+server-1  | Successfully wrote new rectangle to file: /usr/src/app/comfyui_temp/rectangle_0_1723741702140.txt                                                                                                 
+server-1  | Image file watcher: New file detected: /usr/src/app/comfyui_images/comfy_004.png
+server-1  | Image file watcher: New file detected: /usr/src/app/comfyui_images/56.png
+server-1  | Image file watcher: New file detected: /usr/src/app/comfyui_images/ComfyUI_00037_.png      
+server-1  | Image file stats read successfully: 56.png                                                 
+server-1  | Calling handleNewAgentResponse with type: image                                            
+server-1  | New agent response received: 56.png Type: image                                            
+server-1  | Emitted new agent response: 56.png, Type: image
+server-1  | Image file stats read successfully: comfy_004.png                                          
+server-1  | Calling handleNewAgentResponse with type: image                                            
+server-1  | New agent response received: comfy_004.png Type: image  
+
+key differentiators 
+-- wsofter
+- has a user (we are the user)
+-has a time value add thats universal 
+- has a space of operation
+- has a UI/UX that is user first...is ser first in its decisions (human centric)

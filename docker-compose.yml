@@ -1,0 +1,49 @@
+version: '3.9'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      SECRET_KEY: ${SECRET_KEY}
+      COMFYUI_TEMP_DIR: /usr/src/app/comfyui_temp
+      COMFYUI_RETURN_DIR: /usr/src/app/comfyui_returns
+      COMFYUI_IMAGE_DIR: /usr/src/app/comfyui_images
+      COMFYUI_SEARCH_DIR: /usr/src/app/comfyui_search
+      WHISPER_INPUTS_DIR: /usr/src/app/whisper_inputs
+    volumes:
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
+      - ./comfyui_temp:/usr/src/app/comfyui_temp
+      - ./comfyui_returns:/usr/src/app/comfyui_returns 
+      - ./comfyui_images:/usr/src/app/comfyui_images
+      - ./comfyui_search:/usr/src/app/comfyui_search
+      - ./whisper_inputs:/usr/src/app/whisper_inputs  # Add this line
+    networks:
+      - agentsee_network
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
+    volumes:
+      - ./client:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - agentsee_network
+    depends_on:
+      - server
+
+networks:
+  agentsee_network:
+    driver: bridge

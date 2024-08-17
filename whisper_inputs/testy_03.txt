@@ -1,0 +1,179 @@
+Neon Genesis Evangelion 1990s Anime style LoRA
+
+One of the best anime/manga ever made. Use this with AnyLoRA and similar models at around weight 1. Increase the fidelity with the trigger evangelion anime style. Could also help adding anime screencap, 1990s_\(style\) to get more flat colors and 1990s anime noise.
+
+I also suggest you select "None" as the upscaler for highres.fix.
+I posted examples using both "None" and R-ERSGAN AnimeVideo, so you can see the difference. The latter is too much "clean" and loses the noise effect.
+
+
+evangelion anime style
+
+
+colorshint lora
+
+colorful,shiny,gradient,abstract
+
+living ballons  ---- latex, fursona inflatable suit shiny pvc balloon
+
+EVAIII
+evangelion mecha
+EVAGOD
+EVA08
+EVA02
+EVA01
+EVA00
+
+nike airforce lora
+af1
+
+
+SDXL headset
+vsnz headset
+
+1.5 head set
+wearing VR glasses,wearing vision pro
+
+
+jpFILM color
+film overlay
+film grain
+
+
+lora:FD3S-000008:0.8,[car],(yellow car:1)car,vehicle,fd3s
+
+<lora:skylineneR34-000014:0.8> car,vehicle,skyliner34
+
+
+helghast:
+Anthro cat in military uniform, with a Kalashnikov assault rifle in his hands, takes aim at the target, looks through the sight, short fur, black hair, blood, trench, trench, earth, dirt, war, shooting, shootout. ultra realism, photographic graphics, high quality, soldart, attention to detail, (cat ears), black tail, without hope, firearms
+
+watercoloranime
+---------watercolor (medium)
+
+
+sticker
+Sticker, cute cartoon of
+
+SDXL loras and models
+
+
+film photography style light grain medium grain heavy grain
+
+sdxl film photography style
+
+juggernaut xl
+
+
+Sampler: DPM++ 2M Karras
+
+Steps: 30-40
+
+CFG: 3-7 (less is a bit more realistic)
+
+Simply type "Inkdrawing, " followed by your prompt. For example, “Inkdrawing, a dragon flying over a castle”.
+
+xrayLORA
+xray
+
+juggernautsdx cinematic lora
+Movie Still
+Film Still
+Cinematic
+Cinematic Shot
+Cinematic Lighting
+
+DeathBurger
+josan gonzalez
+
+
+clotes updte
+
+TNF outfit
+Streetwear outfit
+Bape outfit
+Fila outfit
+Nike outfit
+Adidas outfit
+Puma outfit
+Balenciaga outfit
+Puma outfit
+Puma outfit Xbox outfit Supreme outfit Barihama outfit 
+
+
+sdxlcctv
+cctvfootage
+
+
+hiroshi_nagai
+masterpiece, best quality,  xyzBalaclava, man dressed well,  simple background,  --w 512 --h 768 --d1 --l8 --s20
+
+
+
+stickerssdxlredmon
+Stickers
+sticker
+
+stickers10
+cute cartoon of
+
+urbanstreet view 
+cityscape
+
+
+MOTIONLORA
+ conda activate D:\COMFY\ComfyUI_windows_portable_nvidia_cu118_or_cpu\ComfyUI_windows_portable\python_miniconda_env\ComfyUI
+
+cd cd AnimateDiff-MotionDirector
+conda activate animatediff-motiondirector
+
+
+disco diffuison lora
+--->in the style of t3xtn
+
+depth lora
+---->depth map, black background, high contrast
+
+marine biology
+--->Marine Biology
+
+realflow
+---->realflow
+
+microscope checkpt
+----Microscopic
+
+Watercolor
+----transparent-watercolor
+
+niji-watercolor
+----water color --blue 7og
+
+
+cartoon fanart style
+--cartoon fanart style
+
+404errormask
+-----fencing mask
+
+SDXL_anime_lineart
+-----lineart, monochrome,
+
+-------pixlineart, sketch, drawing
+
+
+teslabot
+------teslabot
+
+
+Hiroshi Nagai Style
+----------Hiroshi Nagai Style page
+[SDXL] Hiroshi Nagai Style
+-------hiroshi_nagai
+
+
+8mm_DEV_DOPE
+----------ar 3:4 --v 5.1 --style raw, photo 8mm fisheye lens by 8mmfishlent black borders, experimental photography
+
+
+hud_showing shoes
+-----------hud_sh03_sh0w, foreshortening, looking at viewer, sneakers, boots, high heels

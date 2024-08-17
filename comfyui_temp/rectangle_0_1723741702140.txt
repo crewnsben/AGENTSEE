@@ -1,0 +1,38 @@
+
+You sent
+needs some cleanup, but image primitive and whisper primites are in
+You sent
+some aesthtics need to be fixed
+Evangelos Koutsioumpas replied to you
+YESSSSSS!!!
+Evangelos Koutsioumpas
+🫡🫡🫡🫡🫡
+Evangelos Koutsioumpas
+It will RIPPPP
+Evangelos Koutsioumpas replied to you
+Well I guess just ratios but that is a tomorrow thing
+You sent
+the other thing i need to fix is like the placement
+You sent
+the ratios worked but it was too big and when i reduced it it blew it up
+Evangelos Koutsioumpas replied to you
+I can take a look, my Claude got some energy left for today
+lient-1  | babel-preset-react-app is part of the create-react-app project, which                           
+client-1  | is not maintianed anymore. It is thus unlikely that this bug will                               
+client-1  | ever be fixed. Add "@babel/plugin-proposal-private-property-in-object" to                       
+client-1  | your devDependencies to work around this error. This will make this message
+client-1  | go away.                                                                                        
+client-1  |                                                                                                 
+client-1  | Compiled successfully!                                                                          
+client-1  |                                                                                                 
+client-1  | You can now view client in the browser.                                                         
+client-1  |                                                                                                 
+client-1  |   Local:            http://localhost:3000
+client-1  |   On Your Network:  http://172.18.0.3:3000                                                      
+client-1  |                                                                                                 
+client-1  | Note that the development build is not optimized.                                               
+client-1  | To create a production build, use npm run build.                                                
+client-1  |                                                                                                 
+client-1  | webpack compiled successfully                                                                   
+server-1  | New client connected: qyuujKSuJCvsrOAyAAAB
+server-1  | User joined: {"id":1,"username":"user1"}

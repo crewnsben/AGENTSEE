@@ -1,0 +1,4 @@
+comfuI set up
+
+currently comfyui is running from a embedded python env on this "http://127.0.0.1:8188/" local server for the GUI
+Ideally, when a user inputs a text into the yellow rectangle, this acts as an prompt input for a agent system running in the griptape framework inside comfyui.  for now, i want to essentially call the agent, have it out put a .txt file and then have that information propagated into a greysquare of the same size directly connected to the yellow square with the date and time

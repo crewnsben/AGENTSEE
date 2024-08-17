@@ -1,0 +1,228 @@
+{
+  "last_node_id": 10,
+  "last_link_id": 9,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "Griptape Agent Config: Anthropic",
+      "pos": [
+        341,
+        370
+      ],
+      "size": {
+        "0": 315,
+        "1": 154
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "CONFIG",
+          "type": "CONFIG",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Griptape Agent Config: Anthropic"
+      },
+      "widgets_values": [
+        "claude-3-5-sonnet-20240620",
+        "claude-3-5-sonnet-20240620",
+        0.1,
+        10342349342,
+        "fixed"
+      ]
+    },
+    {
+      "id": 2,
+      "type": "Griptape Create: Agent",
+      "pos": [
+        745,
+        474
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "agent",
+          "type": "AGENT",
+          "link": null
+        },
+        {
+          "name": "config",
+          "type": "CONFIG",
+          "link": 1
+        },
+        {
+          "name": "tools",
+          "type": "TOOL_LIST",
+          "link": null
+        },
+        {
+          "name": "rulesets",
+          "type": "RULESET",
+          "link": null
+        },
+        {
+          "name": "input_string",
+          "type": "STRING",
+          "link": 7,
+          "widget": {
+            "name": "input_string"
+          },
+          "slot_index": 4
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUTPUT",
+          "type": "STRING",
+          "links": [
+            9
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "AGENT",
+          "type": "AGENT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Griptape Create: Agent"
+      },
+      "widgets_values": [
+        "",
+        ""
+      ]
+    },
+    {
+      "id": 8,
+      "type": "Load Text File",
+      "pos": [
+        386,
+        673
+      ],
+      "size": {
+        "0": 315,
+        "1": 102
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": [
+            7
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "DICT",
+          "type": "DICT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Load Text File"
+      },
+      "widgets_values": [
+        "agent_test_input",
+        "[filename]"
+      ]
+    },
+    {
+      "id": 10,
+      "type": "Save Text File",
+      "pos": [
+        1218,
+        517
+      ],
+      "size": [
+        315,
+        202
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "link": 9,
+          "widget": {
+            "name": "text"
+          }
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Save Text File"
+      },
+      "widgets_values": [
+        "",
+        "D:\\\\AGENTSEE\\\\comfyui_temp\\\\output_[filename].txt",
+        "agent_test_output",
+        "_",
+        4,
+        ".json",
+        "utf-8"
+      ],
+      "color": "#322",
+      "bgcolor": "#533"
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      1,
+      "CONFIG"
+    ],
+    [
+      7,
+      8,
+      0,
+      2,
+      4,
+      "STRING"
+    ],
+    [
+      9,
+      2,
+      0,
+      10,
+      0,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.3310000000000004,
+      "offset": [
+        -1112.4524793473345,
+        17.468050783494277
+      ]
+    }
+  },
+  "version": 0.4
+}

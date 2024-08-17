@@ -1,0 +1,15 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+
+const PrimitiveInputRectangle = ({ rect, indexNumber }) => {
+  return (
+    <div 
+      style={{
+        position: 'relative',
+        width: rect.width,
+        height: rect.height,
+        backgroundColor: '#F5F5F5', // Tan rectangle background color
+        margin: '20px auto',
+        borderRadius: '0px', // Remove any border radius
+        border: 'none', // Remove the border stroke
+      }}
