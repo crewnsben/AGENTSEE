@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { wrapText } from './textUtils';
 import Typewriter from 'typewriter-effect';
 
-const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
+const PrimitiveInputRectangle = ({ rect, onMove, zoom,isLinked,panOffset }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
@@ -10,12 +10,14 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
   const maxHeight = 400; // Maximum height of the rectangle
   const columnGap = 10; // Gap between columns
 
+  const isResponse = rect.id.startsWith('response_');
+
   const { columns, totalWidth } = useMemo(() => {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     context.font = `${14 * zoom}px Arial`;
 
-    const maxColumnWidth = (maxWidth * zoom - columnGap * 2) / 3; // Divide into 3 columns max
+    const maxColumnWidth = maxWidth * zoom - columnGap * 2; // Divide into 3 columns max
     const lines = wrapText(context, rect.text, maxColumnWidth);
     
     const columnsRequired = Math.ceil(lines.length * (14 * zoom * 1.2) / (maxHeight * zoom));
@@ -31,6 +33,55 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
 
     return { columns, totalWidth };
   }, [rect.text, zoom, maxWidth, maxHeight]);
+  
+  const renderConnectionPoints = () => {
+    if (!isLinked) return null;
+
+    return (
+      <>
+        <div style={{
+          position: 'absolute',
+          right: '-5px',
+          top: '50%',
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          backgroundColor: 'dimgrey',
+          transform: 'translateY(-50%)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          left: '-5px',
+          top: '50%',
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          backgroundColor: 'dimgrey',
+          transform: 'translateY(-50%)',
+        }} />
+                <div style={{
+          position: 'absolute',
+          left: '50%',
+          top: '0%',
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          backgroundColor: 'black',
+          transform: 'translateX(-50%)',
+        }} />
+                <div style={{
+          position: 'absolute',
+          left: '50%',
+          top: '100%',
+          width: '10px',
+          height: '10px',
+          borderRadius: '50%',
+          backgroundColor: 'black',
+          transform: 'translateX(-50%)',
+        }} />
+      </>
+    );
+  };
 
   const renderText = () => {
     return columns.map((column, columnIndex) => (
@@ -44,7 +95,8 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
             opacity: lineIndex === 0 && columnIndex === 0 ? 1 : 0.7,
             fontSize: `${14 * zoom}px`,
             lineHeight: `${14 * zoom * 1.2}px`,
-            whiteSpace: 'pre-wrap'
+            whiteSpace: 'pre-wrap',
+            color: isResponse ? '#000080' : 'inherit', // Dark blue text for responses
           }}>
             {columnIndex === 0 && lineIndex === 0 ? (
               <Typewriter
@@ -52,6 +104,7 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
                   strings: [line],
                   autoStart: true,
                   loop: false,
+                  deleteSpeed: 9999999,
                 }}
               />
             ) : line}
@@ -60,7 +113,6 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
       </div>
     ));
   };
-
 
   // No changes to drag handling logic
   const handleMouseDown = (e) => {
@@ -93,22 +145,25 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
 
  
     return (
-      <div 
+      <div
+        id={rect.id}
         style={{
           position: 'absolute',
           left: rect.x,
           top: rect.y,
-          width: `${totalWidth}px`, // Use calculated totalWidth
+          width: `${totalWidth}px`,
           height: `${maxHeight * zoom}px`,
-        backgroundColor: '#F5F5F5',
-        borderRadius: '0px',
-        border: 'none',
-        cursor: isDragging ? 'grabbing' : 'grab',
-        boxShadow: '0 4px 8px rgba(0,0,0,0.1)', //#_________________________________________________________________________________________________________________________
-        overflow:'visible',
-        display: 'flex',
-        flexDirection: 'row',
-      }}
+          borderRadius: isResponse ? '10px' : '0px',
+          border: isResponse ? '2px solid #4169E1' : 'none', // Royal blue border for responses
+          cursor: isDragging ? 'grabbing' : 'grab',
+          boxShadow: isResponse ? '0 4px 8px rgba(65,105,225,0.3)' : '0 4px 8px rgba(0,0,0,0)',
+          overflow: 'visible',
+          display: 'flex',
+          flexDirection: 'column',
+          padding: `${20 * zoom}px`,
+          flexDirection: 'row',
+          backgroundColor: isResponse ? '#F0F8FF' : 'transparent', // Light blue background for responses
+        }}
       onMouseDown={handleMouseDown}
     >
       {/* Blue tab */}
@@ -116,10 +171,10 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
         style={{
           position: 'absolute',
           top: '0px',
-          right: '0px',
+          right: `${20 * zoom}px`,
           width: `${60 * zoom}px`,
           height: `${20 * zoom}px`,
-          backgroundColor: '#0000FF',
+          backgroundColor: isResponse ? '#4169E1' : '#0000FF',
           color: '#FFFFFF',
           display: 'flex',
           alignItems: 'center',
@@ -130,17 +185,18 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
           borderBottomLeftRadius: '5px',
         }}
       >
-        whisper
+        {isResponse ? 'Agent' : 'whisper'}
       </div>
 
       {/* Text content */}
       <div
         style={{
-          padding: `${10 * zoom}px`,
+          padding: `${20 * zoom}px`,
           display: 'flex',
           flexDirection: 'row',
           height: '100%',
-          overflowY: 'auto',
+          overflowY: 'hidden',
+          backgroundColor: '#f5f5f5'
         }}
       >
         {renderText()}
@@ -150,14 +206,16 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom }) => {
       <div
         style={{
           position: 'absolute',
-          bottom: `${-20 * zoom}px`,
-          right: `${10 * zoom}px`,
-          fontSize: `${12 * zoom}px`,
-          color: '#999999',
+          bottom: `${-40 * zoom}px`,
+          right: `${20 * zoom}px`,
+          fontSize: `${14 * zoom}px`,
+          fontWeight: `${400 * zoom}px`,
+          color: isResponse ? '#4169E1' : '#999999', // Royal blue for responses
         }}
       >
         {`index_${rect.indexNumber?.toString().padStart(3, '0')}`}
       </div>
+      {renderConnectionPoints()}
     </div>
   );
 };

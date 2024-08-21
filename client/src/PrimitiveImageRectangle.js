@@ -1,13 +1,10 @@
 import React, { useState, useCallback, useRef } from 'react';
 
-const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const containerRef = useRef(null);
-
+// New function to get the configuration
+export const getPrimitiveImageConfig = () => {
   const canvasPadding = 50;
-  const largestWidth = 175;
-  const secondLargestWidth = 75;
+  const largestWidth = 450;
+  const secondLargestWidth = 180;
   const smallWidth = 30;
   const textBlockWidth = 50;
   const reducedPadding = 11 / 3;
@@ -24,6 +21,21 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
 
   const canvasWidth = largestWidth + secondLargestWidth + canvasPadding * 2 + 2.75;
   const canvasHeight = largestWidth + 25 + canvasPadding * 2;
+
+  return {
+    imageLayout,
+    canvasWidth,
+    canvasHeight
+  };
+};
+
+const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+
+  // Use the configuration function
+  const { imageLayout, canvasWidth, canvasHeight } = getPrimitiveImageConfig();
 
   const isOverVisiblePart = (e) => {
     if (!containerRef.current) return false;
@@ -71,11 +83,12 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
     <div 
       ref={containerRef}
       style={{
-        position: 'relative',
+        position: 'absolute',
         left: rect.x,
         top: rect.y,
         width: canvasWidth,
         height: canvasHeight,
+        cursor: isDragging ? 'grabbing' : 'grab',
         // ... (other styles remain the same)
       }}
       onMouseDown={handleMouseDown}
@@ -89,15 +102,18 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
           height: layout.height,
           overflow: 'hidden',
         }}>
+          {images && images[index] && (
           <img 
             src={`${process.env.REACT_APP_API_URL}/images/${images[index] || images[0]}`}
             alt={`Section ${index + 1}`} 
+            onError={(e) => console.error(`Error loading image: ${e.target.src}`)}
             style={{
               width: '100%',
               height: '100%',
               objectFit: 'cover',
             }} 
           />
+        )}
         </div>
       ))}
       <div style={{ position: 'absolute', bottom: 5, right: 5, display: 'flex', justifyContent: 'space-around', padding: '5px' }}>

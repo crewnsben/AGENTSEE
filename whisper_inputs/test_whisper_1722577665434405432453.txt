@@ -1,0 +1,8 @@
+t of my “no_speech_prob” parameters were much lower, but some were as high as 94%. There is almost no silent space at the start. But if you are getting this on more than one recording, it suggests that it might be a more systemic problem.
+
+I gather from what I take to be the original github repository that the no_speech_prob is used in conjunction with the avg_logprob to determine whether the segment should be regarded as silent according to this script 7. The no_speech_prob must be above 0.6 and simultaneously the avg_logprob below -1 for the s
+
+style="position: absolute; left: 1103.8px; top: -79.5828px; width: 1068.11px; height: 712.075px; border-radius: 0px; border: none; cursor: grab; box-shadow: rgba(0, 0, 0, 0) 0px 4px 8px; overflow: visible; display: flex; padding: 35.6037px; flex-direction: row; background-color: rgb(245, 245, 245);"
+
+
+egment to be treated as silent/skipped, but as the plot shows these conditions are never both met even though the no_speech_prob is sometimes very high. But I don’t think this helps with our problem, and I don’t know what the default thresholds are for the OpenAI API Whisper. Anyway, it’s been an interesting and educative exploration. Thanks for your interest.

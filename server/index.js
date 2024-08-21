@@ -64,81 +64,150 @@ let canvasState = {
 
 const handleNewAgentResponse = async (filename, content, type) => {
   console.log('New agent response received:', filename, 'Type:', type);
-
   try {
     if (type === 'whisper_input') {
       console.log('Received whisper input:', content);
-      io.emit('newPrimitiveRectangle', { content });
+      io.emit('newPrimitiveRectangle', { content, filename });
       return;
     }
 
-    const lastUserRect = canvasState.rectangles.find(rect => !rect.isResponse);
-    const lastResponseRect = canvasState.rectangles.slice().reverse().find(rect => rect.isResponse);
+    let newRect;
+    
+    if (type === 'image') {
+      const width = 534; // 512 + 2 * 11 (padding)
+      const height = 534; // 512 + 2 * 11 (padding)
+      const gap = 11;
 
-    if (lastUserRect) {
-      let newRect;
-      const userRectBottomEdge = lastUserRect.y + lastUserRect.height;
-      
-      if (type === 'image') {
-        const width = 534; // 512 + 2 * 11 (padding)
-        const height = 534; // 512 + 2 * 11 (padding)
-        const gap = 11;
-        let x, y;
+      // Get the last rectangle, if any
+      const lastRect = canvasState.rectangles[canvasState.rectangles.length - 1];
 
-        if (lastResponseRect && lastResponseRect.type === 'image') {
-          x = lastResponseRect.x + width + gap;
-          y = lastResponseRect.y;
-        } else {
-          x = lastUserRect.x + lastUserRect.width + 50;
-          y = lastUserRect.y;
-        }
-
-        newRect = {
-          x,
-          y,
-          width,
-          height,
-          imageSrc: filename,
-          isResponse: true,
-          type: 'image',
-          index: canvasState.rectangles.length
-        };
+      let x, y;
+      if (lastRect) {
+        x = lastRect.x + lastRect.width + gap;
+        y = lastRect.y;
       } else {
-        // Text rectangle creation with dynamic sizing
-        const estimatedWidth = 300; // Base width
-        const estimatedHeight = Math.max(200, Math.ceil(content.length / 50) * 20); // Rough estimate of height based on content length
-
-        newRect = {
-          x: lastUserRect.x,
-          y: userRectBottomEdge + 50, // Position 50px below the user rectangle
-          width: estimatedWidth,
-          height: estimatedHeight,
-          text: content,
-          isResponse: true,
-          type: type, // This will be 'text' or 'search'
-          index: canvasState.rectangles.length
-        };
+        x = 50; // Default starting position
+        y = 50;
       }
 
-      canvasState.rectangles.push(newRect);
-
-      // Emit the new response to all connected clients
-      canvasState.rectangles.push(newRect);
-
-      io.emit('newComfyUIResponse', { 
-        filename, 
-        content,
-        type,
-        rectangle: newRect
-      });
-
-      console.log(`Emitted new agent response: ${filename}, Type: ${type}`);
+      newRect = {
+        x,
+        y,
+        width,
+        height,
+        imageSrc: filename,
+        isResponse: true,
+        type: 'image',
+        index: canvasState.rectangles.length
+      };
     } else {
-      console.error('No user question found to associate with this response');
+      // Text rectangle creation with dynamic sizing
+      const estimatedWidth = 300; // Base width
+      const estimatedHeight = Math.max(200, Math.ceil(content.length / 50) * 20);
+
+      const lastRect = canvasState.rectangles[canvasState.rectangles.length - 1];
+      const x = lastRect ? lastRect.x : 50;
+      const y = lastRect ? lastRect.y + lastRect.height + 50 : 50;
+
+      newRect = {
+        x,
+        y,
+        width: estimatedWidth,
+        height: estimatedHeight,
+        text: content,
+        isResponse: true,
+        type: type, // This will be 'text' or 'search'
+        index: canvasState.rectangles.length
+      };
     }
+
+    canvasState.rectangles.push(newRect);
+
+    io.emit('newComfyUIResponse', { 
+      filename, 
+      content,
+      type,
+      rectangle: newRect
+    });
+
+    console.log(`Emitted new agent response: ${filename}, Type: ${type}`);
   } catch (error) {
     console.error('Error handling new agent response:', error);
   }
+  // try {
+  //   if (type === 'whisper_input') {
+  //     console.log('Received whisper input:', content);
+  //     io.emit('newPrimitiveRectangle',{content , filename});
+  //     return;
+  //   }
+
+  //   const lastUserRect = canvasState.rectangles.find(rect => !rect.isResponse);
+  //   const lastResponseRect = canvasState.rectangles.slice().reverse().find(rect => rect.isResponse);
+
+  //   if (lastUserRect) {
+  //     let newRect;
+  //     const userRectBottomEdge = lastUserRect.y + lastUserRect.height;
+      
+  //     if (type === 'image') {
+  //       const width = 534; // 512 + 2 * 11 (padding)
+  //       const height = 534; // 512 + 2 * 11 (padding)
+  //       const gap = 11;
+  //       let x, y;
+
+  //       if (lastResponseRect && lastResponseRect.type === 'image') {
+  //         x = lastResponseRect.x + width + gap;
+  //         y = lastResponseRect.y;
+  //       } else {
+  //         x = lastUserRect.x + lastUserRect.width + 50;
+  //         y = lastUserRect.y;
+  //       }
+
+  //       newRect = {
+  //         x,
+  //         y,
+  //         width,
+  //         height,
+  //         imageSrc: filename,
+  //         isResponse: true,
+  //         type: 'image',
+  //         index: canvasState.rectangles.length
+  //       };
+  //     } else {
+  //       // Text rectangle creation with dynamic sizing
+  //       const estimatedWidth = 300; // Base width
+  //       const estimatedHeight = Math.max(200, Math.ceil(content.length / 50) * 20); // Rough estimate of height based on content length
+
+  //       newRect = {
+  //         x: lastUserRect.x,
+  //         y: userRectBottomEdge + 50, // Position 50px below the user rectangle
+  //         width: estimatedWidth,
+  //         height: estimatedHeight,
+  //         text: content,
+  //         isResponse: true,
+  //         type: type, // This will be 'text' or 'search'
+  //         index: canvasState.rectangles.length
+  //       };
+  //     }
+
+  //     canvasState.rectangles.push(newRect);
+
+  //     // Emit the new response to all connected clients
+  //     canvasState.rectangles.push(newRect);
+
+  //     io.emit('newComfyUIResponse', { 
+  //       filename, 
+  //       content,
+  //       type:'image',
+  //       rectangle: newRect
+  //     });
+
+  //     console.log(`Emitted new agent response: ${filename}, Type: ${type}`);
+  //   } else {
+  //     console.error('No user question found to associate with this response');
+  //   }
+  // } catch (error) {
+  //   console.error('Error handling new agent response:', error);
+  // }
 };
 
 

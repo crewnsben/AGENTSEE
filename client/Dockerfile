@@ -1,5 +1,7 @@
 # Use the official Node.js image
-FROM node:14
+# FROM node:14
+# Try to use an image that utilizes both python and node.js
+FROM nikolaik/python-nodejs:latest
 
 # Set the working directory inside the container
 WORKDIR /usr/src/app
