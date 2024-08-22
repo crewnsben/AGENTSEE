@@ -29,7 +29,7 @@ export const getPrimitiveImageConfig = () => {
   };
 };
 
-const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panX, panY }) => {
+const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panOffset }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
@@ -88,8 +88,8 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panX, panY
       ref={containerRef}
       style={{
         position: 'relative',
-        left: (rect.x + panX) * zoom,
-        top: (rect.y + panY)*zoom,
+        left: `${rect.x}px`,
+        top: `${rect.y}px`,
         width: canvasWidth*zoom,
         height: canvasHeight*zoom,
         cursor: isDragging ? 'grabbing' : 'grab',

@@ -21,6 +21,10 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   const [recentRectangles, setRecentRectangles] = useState([]);
   const [draggedRect, setDraggedRect] = useState(null);
 
+  const [targetZoom, setTargetZoom] = useState(1);
+  const [targetPanOffset, setTargetPanOffset] = useState({ x: 0, y: 0 });
+  const [animationPhase, setAnimationPhase] = useState(null); // 'zoomIn', 'zoomOut', or null
+  const animationRef = useRef(null);
 
   const handleRectangleResize = useCallback((id, newWidth, newHeight) => {
     setRectangles(prevRects => prevRects.map(rect =>
@@ -90,6 +94,64 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
       return filtered;
     });
   }, []);
+  
+  const startZoomAnimation = useCallback((rect) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+
+    // Calculate zoom to fit the rectangle
+    const zoomX = canvasWidth / (rect.width * 1.5);
+    const zoomY = canvasHeight / (rect.height * 1.5);
+    const newZoom = Math.min(zoomX, zoomY);
+
+    const centerX = rect.x + rect.width / 2;
+    const centerY = rect.y + rect.height / 2;
+
+    setTargetZoom(newZoom);
+    setTargetPanOffset({
+      x: canvasWidth / 2 - centerX * newZoom,
+      y: canvasHeight / 2 - centerY * newZoom
+    });
+    
+    //__________________________________________________________________________________________________________Here
+    animationRef.current = {
+      startTime: performance.now(),
+      startZoom: zoom,
+      startPanOffset: { ...panOffset }
+    };
+    //________________________________________________________________________________________________To here
+    setAnimationPhase('zoomIn');
+  }, [zoom,panOffset]);
+
+  const zoomToAllRectangles = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || primitiveRectangles.length === 0) return;
+
+    const minX = Math.min(...primitiveRectangles.map(r => r.x));
+    const minY = Math.min(...primitiveRectangles.map(r => r.y));
+    const maxX = Math.max(...primitiveRectangles.map(r => r.x + r.width));
+    const maxY = Math.max(...primitiveRectangles.map(r => r.y + r.height));
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+
+    const zoomX = canvas.width / (width * 1.1);
+    const zoomY = canvas.height / (height * 1.1);
+    const newZoom = Math.min(zoomX, zoomY, 1); // Limit zoom out to 1
+
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+
+    setTargetZoom(newZoom);
+    setTargetPanOffset({
+      x: canvas.width / 2 - centerX * newZoom,
+      y: canvas.height / 2 - centerY * newZoom
+    });
+    setAnimationPhase('zoomOut');
+  }, [primitiveRectangles]);
 
   const handleNewPrimitiveRectangle = useCallback(({ content, filename }) => {
     console.log('handleNewPrimitiveRectangle called with:', { content, filename });
@@ -117,14 +179,33 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
       setShowOverlay(true);
       setTimeout(() => setShowOverlay(false), 10000);   //____________________________________________________________________Time for the Rec Button to go Away.
 
+      
+      
       console.log('Creating new rectangle:', newRect);
-      setPrimitiveRectangles(prevRects => [...prevRects, newRect]);
+      setPrimitiveRectangles(prevRects => {  //_______________________________________________Here
+        const updatedRects = [...prevRects, newRect];
+        // Trigger zoom animation after state update
+        setTimeout(() => startZoomAnimation(newRect), 0);
+        return updatedRects;
+      });//_________________________________________________________________________________TOHERE
       setProcessedRectangles(prev => new Set(prev).add(rectangleId));
       checkAndLinkRectangles(newRect);
+
+      // zoomToRectangle(newRect);
+
+       // Trigger zoom out after a delay
+       startZoomAnimation(newRect);
     }else{
       console.log('Rectangle already processed:', rectangleId);
     }
-  }, [getNextPosition, primitiveRectangles.length, processedRectangles, checkAndLinkRectangles]);
+  }, [getNextPosition, primitiveRectangles.length, processedRectangles, checkAndLinkRectangles, zoomToAllRectangles,startZoomAnimation]);
+  
+  const preventBrowserZoom = useCallback((e) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+    }
+  }, []);
+
 
   // useEffect(() => {
   //   socket.on("newPrimitiveRectangle", handleNewPrimitiveRectangle);
@@ -260,124 +341,14 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
       newRect.index = prevRects.length;
   
       console.log('Adding new rectangle:', newRect);
+
+      setTimeout(() => startZoomAnimation(newRect), 0);//__________________________________
+
       return [...prevRects, newRect];
     });
-  }, [setRectangles,zoom,panOffset]);
+  }, [setRectangles,zoom,panOffset,startZoomAnimation]);
 
-  useEffect(() => {
-    const handleNewRectangle = (newRect) => {
-      console.log('New rectangle received:', newRect);
-      setRectangles(prevRects => [...prevRects, newRect]);
-      if (editingRect && !editingRect.index) {
-        setEditingRect(newRect);
-      }
-    };
-  
-    const handleUpdateRectangleText = ({ index, text, height }) => {
-      console.log('Updating rectangle text:', index, text, height);
-      setRectangles(prevRects => 
-        prevRects.map((rect, i) => i === index ? { ...rect, text, height: height || rect.height } : rect)
-      );
-    }; 
-   
-  
-    socket.on("newRectangle", handleNewRectangle);
-    socket.on("updateRectangleText", handleUpdateRectangleText);
-    socket.on('newComfyUIResponse', handleNewComfyUIResponse);
-    socket.on("newPrimitiveRectangle", handleNewPrimitiveRectangle);
-  
-    return () => {
-      socket.off("newRectangle", handleNewRectangle);
-      socket.off("updateRectangleText", handleUpdateRectangleText);
-      socket.off('newComfyUIResponse', handleNewComfyUIResponse);
-      socket.off("newPrimitiveRectangle", handleNewPrimitiveRectangle);
-    };
-  }, [socket, setRectangles, editingRect, handleNewComfyUIResponse, handleNewPrimitiveRectangle]);
-
-  
-  useEffect(() => {
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [handleResize]);
-
-  useEffect(() => {
-    redrawCanvas();
-  }, [redrawCanvas]);
-
-  const handleWheel = useCallback((e) => {
-    const scaleAmount = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = zoom * scaleAmount;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-
-    const newPanOffset = {
-      x: mouseX - (mouseX - panOffset.x) * scaleAmount,
-      y: mouseY - (mouseY - panOffset.y) * scaleAmount
-    };
-
-    setZoom(newZoom);
-    setPanOffset(newPanOffset);
-    redrawCanvas();
-  }, [zoom, panOffset, redrawCanvas]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (canvas) {
-      canvas.addEventListener('wheel', handleWheel, { passive: true });
-    }
-
-    return () => {
-      if (canvas) {
-        canvas.removeEventListener('wheel', handleWheel);
-      }
-    };
-  }, [handleWheel]);
-
-  const preventBrowserZoom = useCallback((e) => {
-    if (e.ctrlKey) {
-      e.preventDefault();
-    }
-  }, []);
-
-
-  useEffect(() => {
-    window.addEventListener('wheel', preventBrowserZoom, { passive: false });
-
-    return () => {
-      window.removeEventListener('wheel', preventBrowserZoom);
-    };
-  }, [preventBrowserZoom]);
-
-  useEffect(() => {
-    const preventZoom = (e) => {
-      if (e.ctrlKey) {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener('mousewheel', preventZoom, { passive: false });
-
-    return () => {
-      window.removeEventListener('mousewheel', preventZoom);
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleFileWritten = () => {
-      setShowOverlay(true);
-      setTimeout(() => {
-        setShowOverlay(false);
-      }, 5000); // 5 seconds
-    };
-  
-    socket.on("fileWritten", handleFileWritten);
-  
-    return () => {
-      socket.off("fileWritten", handleFileWritten);
-    };
-  }, [socket]);
+  const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
 
   const getClickedRectangleIndex = (e) => {
     const { offsetX, offsetY } = e.nativeEvent;
@@ -456,7 +427,207 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     redrawCanvas();
   }, [redrawCanvas]);
 
+  const handleWheel = useCallback((e) => {
+    if (animationPhase === null) {
+      const scaleAmount = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = zoom * scaleAmount;
 
+      const rect = canvasRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      const newPanOffset = {
+        x: mouseX - (mouseX - panOffset.x) * scaleAmount,
+        y: mouseY - (mouseY - panOffset.y) * scaleAmount
+      };
+
+      setZoom(newZoom);
+      setPanOffset(newPanOffset);
+      redrawCanvas();
+    }
+  }, [zoom, panOffset, animationPhase, redrawCanvas]);
+
+  useEffect(() => {
+    const handleNewRectangle = (newRect) => {
+      console.log('New rectangle received:', newRect);
+      setRectangles(prevRects => [...prevRects, newRect]);
+      if (editingRect && !editingRect.index) {
+        setEditingRect(newRect);
+      }
+    };
+  
+    const handleUpdateRectangleText = ({ index, text, height }) => {
+      console.log('Updating rectangle text:', index, text, height);
+      setRectangles(prevRects => 
+        prevRects.map((rect, i) => i === index ? { ...rect, text, height: height || rect.height } : rect)
+      );
+    }; 
+   
+  
+    socket.on("newRectangle", handleNewRectangle);
+    socket.on("updateRectangleText", handleUpdateRectangleText);
+    socket.on('newComfyUIResponse', handleNewComfyUIResponse);
+    socket.on("newPrimitiveRectangle", handleNewPrimitiveRectangle);
+  
+    return () => {
+      socket.off("newRectangle", handleNewRectangle);
+      socket.off("updateRectangleText", handleUpdateRectangleText);
+      socket.off('newComfyUIResponse', handleNewComfyUIResponse);
+      socket.off("newPrimitiveRectangle", handleNewPrimitiveRectangle);
+    };
+  }, [socket, setRectangles, editingRect, handleNewComfyUIResponse, handleNewPrimitiveRectangle]);
+
+  
+  useEffect(() => {
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [handleResize]);
+
+  useEffect(() => {
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+
+  //OldHandle_Wheel_________________________________________________________
+  // const handleWheel = useCallback((e) => {
+  //   if(!isZooming){
+  //     const scaleAmount = e.deltaY > 0 ? 0.9 : 1.1;
+  //     const newZoom = zoom * scaleAmount;
+
+  //     const rect = canvasRef.current.getBoundingClientRect();
+  //     const mouseX = e.clientX - rect.left;
+  //     const mouseY = e.clientY - rect.top;
+
+  //     const newPanOffset = {
+  //       x: mouseX - (mouseX - panOffset.x) * scaleAmount,
+  //       y: mouseY - (mouseY - panOffset.y) * scaleAmount
+  //     };
+
+  //     setZoom(newZoom);
+  //     setPanOffset(newPanOffset);
+  //     redrawCanvas();
+  //   }
+  // }, [zoom, panOffset, redrawCanvas]);
+
+
+  useEffect(() => {
+    window.addEventListener('wheel', preventBrowserZoom, { passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', preventBrowserZoom);
+    };
+  }, [preventBrowserZoom]);
+
+  useEffect(() => {
+    const preventZoom = (e) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('mousewheel', preventZoom, { passive: false });
+
+    return () => {
+      window.removeEventListener('mousewheel', preventZoom);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleFileWritten = () => {
+      setShowOverlay(true);
+      setTimeout(() => {
+        setShowOverlay(false);
+      }, 5000); // 5 seconds
+    };
+  
+    socket.on("fileWritten", handleFileWritten);
+  
+    return () => {
+      socket.off("fileWritten", handleFileWritten);
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    const animate = (time) => {
+      if (animationPhase === 'zoomIn' || animationPhase === 'zoomOut') {
+        if (!animationRef.current) {
+          // Initialize animation data if it doesn't exist
+          animationRef.current = {
+            startTime: time,
+            startZoom: zoom,
+            startPanOffset: { ...panOffset }
+          };
+        }
+        
+        const progress = Math.min((time - animationRef.current.startTime) / 1000, 1); // 1 second duration
+        const easeProgress = easeInOutCubic(progress);
+
+        const newZoom = animationRef.current.startZoom + (targetZoom - animationRef.current.startZoom) * easeProgress;
+        const newPanOffset = {
+          x: animationRef.current.startPanOffset.x + (targetPanOffset.x - animationRef.current.startPanOffset.x) * easeProgress,
+          y: animationRef.current.startPanOffset.y + (targetPanOffset.y - animationRef.current.startPanOffset.y) * easeProgress
+        };
+
+        setZoom(newZoom);
+        setPanOffset(newPanOffset);
+
+        if (progress < 1) {
+          animationRef.current.frameId = requestAnimationFrame(animate);
+        } else {
+          // Animation complete
+          if (animationPhase === 'zoomIn') {
+            setAnimationPhase('pause');
+            setTimeout(() => setAnimationPhase('zoomOut'), 1000); // 1 second pause
+          } else {
+            setAnimationPhase(null);
+          }
+        }
+      } else if (animationPhase === 'pause') {
+        // Do nothing during pause
+      } else if (animationPhase === null) {
+        // Animation sequence complete, clean up
+        animationRef.current = null;
+      }
+
+      redrawCanvas();
+    };
+
+    if (animationPhase === 'zoomIn' || animationPhase === 'zoomOut') {
+      if (!animationRef.current) {
+        animationRef.current = {
+          startTime: performance.now(),
+          startZoom: zoom,
+          startPanOffset: { ...panOffset }
+        };
+      }
+      animationRef.current.frameId = requestAnimationFrame(animate);
+    } else if (animationPhase === 'pause') {
+      // Start zoom out after pause
+      setTimeout(() => {
+        zoomToAllRectangles();
+        animationRef.current = null; // Reset for next animation
+      }, 1000);
+    }
+
+    return () => {
+      if (animationRef.current && animationRef.current.frameId) {
+        cancelAnimationFrame(animationRef.current.frameId);
+      }
+    };
+  }, [animationPhase, zoom, panOffset, targetZoom, targetPanOffset, redrawCanvas, zoomToAllRectangles]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.addEventListener('wheel', handleWheel, { passive: true });
+    }
+
+    return () => {
+      if (canvas) {
+        canvas.removeEventListener('wheel', handleWheel);
+      }
+    };
+  }, [handleWheel]);
 
   // const handlePrimitiveRectangleCreation = useCallback((content) => {
   //   const gridSize = 10; // This should match the grid size in BackgroundManager
@@ -510,9 +681,10 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
           images={rect.images} 
           texts={rect.texts} 
           imageSrc={rect.imageSrc}
-          zoom={zoom}
-          panX={panOffset.x}
-          panY={panOffset.y}/>;    // Check THis___________________________________
+          // zoom={zoom}
+          // panX={panOffset.x}
+          // panY={panOffset.y}
+          />;    // Check THis___________________________________
         default:
           console.warn(`Unknown rectangle type: ${rect.type}`);
           return null;
