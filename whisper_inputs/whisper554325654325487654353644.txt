@@ -1,0 +1,2 @@
+t of my “no_speech_prob” parameters were much lower, but some were as high as 94%. There is almost no silent space at the start. But if you are getting this on more than one recording, it suggests that it might be a more systemic problem.
+t of my “no_speech_prob” parameters were much lower, but some were as high as 94%. 

@@ -25,6 +25,16 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   const [targetPanOffset, setTargetPanOffset] = useState({ x: 0, y: 0 });
   const [animationPhase, setAnimationPhase] = useState(null); // 'zoomIn', 'zoomOut', or null
   const animationRef = useRef(null);
+  const [animationCompleted, setAnimationCompleted] = useState(false);
+  const imageEffects = [
+    { greyscale: true },
+    { exposure: 20 },
+    { overlay: true },
+    { hardlight: true },
+    { difference: true},
+    { greyscale: true, exposure: -10 },
+    { overlay: true, exposure: 15 }
+  ];
 
   const handleRectangleResize = useCallback((id, newWidth, newHeight) => {
     setRectangles(prevRects => prevRects.map(rect =>
@@ -119,10 +129,15 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     //__________________________________________________________________________________________________________Here
     animationRef.current = {
       startTime: performance.now(),
+      lastFrameTime: performance.now(),
       startZoom: zoom,
-      startPanOffset: { ...panOffset }
+      startPanOffset: { ...panOffset },
+      duration: 6000, // 2 seconds for zoom in
+      // auseDuration: 3000, // 1.5 seconds pause
+      // zoomOutDuration: 2000 // 2.5 seconds for zoom out
     };
     //________________________________________________________________________________________________To here
+    setAnimationCompleted(false);
     setAnimationPhase('zoomIn');
   }, [zoom,panOffset]);
 
@@ -130,10 +145,17 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     const canvas = canvasRef.current;
     if (!canvas || primitiveRectangles.length === 0) return;
 
-    const minX = Math.min(...primitiveRectangles.map(r => r.x));
-    const minY = Math.min(...primitiveRectangles.map(r => r.y));
-    const maxX = Math.max(...primitiveRectangles.map(r => r.x + r.width));
-    const maxY = Math.max(...primitiveRectangles.map(r => r.y + r.height));
+    // const minX = Math.min(...primitiveRectangles.map(r => r.x));
+    // const minY = Math.min(...primitiveRectangles.map(r => r.y));
+    // const maxX = Math.max(...primitiveRectangles.map(r => r.x + r.width));
+    // const maxY = Math.max(...primitiveRectangles.map(r => r.y + r.height));
+    // _____________________________________________________________________________________________________________LSTUPDTS
+    const allRects = [...primitiveRectangles, ...rectangles];
+    const minX = Math.min(...allRects.map(r => r.x));
+    const minY = Math.min(...allRects.map(r => r.y));
+    const maxX = Math.max(...allRects.map(r => r.x + r.width));
+    const maxY = Math.max(...allRects.map(r => r.y + r.height));
+     // _____________________________________________________________________________________________________________LSTUPDTS
 
     const width = maxX - minX;
     const height = maxY - minY;
@@ -150,8 +172,17 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
       x: canvas.width / 2 - centerX * newZoom,
       y: canvas.height / 2 - centerY * newZoom
     });
-    setAnimationPhase('zoomOut');
-  }, [primitiveRectangles]);
+
+    animationRef.current = {
+      startTime: performance.now(),
+      startZoom: zoom,
+      startPanOffset: { ...panOffset },
+      duration: 6000 // 3 seconds for zoom out
+    };
+    
+    // setAnimationCompleted(false);
+    setAnimationPhase('zoomOut');// MAYBE HERE NULL____________________________________________________________________________
+  }, [primitiveRectangles,rectangles,zoom,panOffset]);
 
   const handleNewPrimitiveRectangle = useCallback(({ content, filename }) => {
     console.log('handleNewPrimitiveRectangle called with:', { content, filename });
@@ -260,27 +291,29 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     context.lineWidth = 1;
     context.stroke();
   }, []);
-
+//  +_________________________________________________________________+++++
   const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const context = canvas.getContext('2d');
-    clearCanvas();
-
-    if (cursors && typeof cursors === 'object') {
-      Object.values(cursors).forEach(cursor => {
-        drawTriangle(
-          context,
-          cursor.x * zoom + panOffset.x,
-          cursor.y * zoom + panOffset.y,
-          cursor.color
-        );
-      });
-    }
-
-    drawLines(context);
+    requestAnimationFrame(() => {
+      clearCanvas();
+  
+      if (cursors && typeof cursors === 'object') {
+        Object.values(cursors).forEach(cursor => {
+          drawTriangle(
+            context,
+            cursor.x * zoom + panOffset.x,
+            cursor.y * zoom + panOffset.y,
+            cursor.color
+          );
+        });
+      }
+  
+      drawLines(context);
+    });
   }, [clearCanvas, zoom, panOffset, cursors, drawTriangle, drawLines]);
-
+//  +_________________________________________________________________+++++++++++++++++++++++
 
   const handleNewComfyUIResponse = useCallback(({ filename, content, type, rectangle }) => {
     console.log('Received new ComfyUI response:', filename, type, content);
@@ -300,7 +333,8 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
             height: canvasHeight,
             images: Array(imageLayout.length).fill(filename),
             texts: Array(imageLayout.length).fill(''),
-            imageLayout
+            imageLayout,
+            imageEffects: Array(imageLayout.length).fill({}) 
           };
         },
         text: () => ({
@@ -348,7 +382,11 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     });
   }, [setRectangles,zoom,panOffset,startZoomAnimation]);
 
-  const easeInOutCubic = (t) => t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1;
+  const easeInOutCubic = (t) => {
+    return t < 0.5
+      ? 4 * t * t * t
+      : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  };
 
   const getClickedRectangleIndex = (e) => {
     const { offsetX, offsetY } = e.nativeEvent;
@@ -426,26 +464,31 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     setDraggedRect(null);
     redrawCanvas();
   }, [redrawCanvas]);
-
+    // ______________________________________________________________________________+++++++++++++++++++++
   const handleWheel = useCallback((e) => {
     if (animationPhase === null) {
-      const scaleAmount = e.deltaY > 0 ? 0.9 : 1.1;
+      e.preventDefault();
+      const scaleAmount = e.deltaY > 0 ? 0.95 : 1.05;
       const newZoom = zoom * scaleAmount;
-
+  
       const rect = canvasRef.current.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
-
+  
       const newPanOffset = {
         x: mouseX - (mouseX - panOffset.x) * scaleAmount,
         y: mouseY - (mouseY - panOffset.y) * scaleAmount
       };
-
-      setZoom(newZoom);
-      setPanOffset(newPanOffset);
-      redrawCanvas();
+  
+      requestAnimationFrame(() => {
+        setZoom(newZoom);
+        setPanOffset(newPanOffset);
+        redrawCanvas();
+      });
     }
   }, [zoom, panOffset, animationPhase, redrawCanvas]);
+
+  // // ______________________________________________________________________________+++++++++++++++++++++
 
   useEffect(() => {
     const handleNewRectangle = (newRect) => {
@@ -477,7 +520,6 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     };
   }, [socket, setRectangles, editingRect, handleNewComfyUIResponse, handleNewPrimitiveRectangle]);
 
-  
   useEffect(() => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -486,29 +528,6 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   useEffect(() => {
     redrawCanvas();
   }, [redrawCanvas]);
-
-
-  //OldHandle_Wheel_________________________________________________________
-  // const handleWheel = useCallback((e) => {
-  //   if(!isZooming){
-  //     const scaleAmount = e.deltaY > 0 ? 0.9 : 1.1;
-  //     const newZoom = zoom * scaleAmount;
-
-  //     const rect = canvasRef.current.getBoundingClientRect();
-  //     const mouseX = e.clientX - rect.left;
-  //     const mouseY = e.clientY - rect.top;
-
-  //     const newPanOffset = {
-  //       x: mouseX - (mouseX - panOffset.x) * scaleAmount,
-  //       y: mouseY - (mouseY - panOffset.y) * scaleAmount
-  //     };
-
-  //     setZoom(newZoom);
-  //     setPanOffset(newPanOffset);
-  //     redrawCanvas();
-  //   }
-  // }, [zoom, panOffset, redrawCanvas]);
-
 
   useEffect(() => {
     window.addEventListener('wheel', preventBrowserZoom, { passive: false });
@@ -549,72 +568,78 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
 
   useEffect(() => {
     const animate = (time) => {
-      if (animationPhase === 'zoomIn' || animationPhase === 'zoomOut') {
-        if (!animationRef.current) {
-          // Initialize animation data if it doesn't exist
-          animationRef.current = {
-            startTime: time,
-            startZoom: zoom,
-            startPanOffset: { ...panOffset }
-          };
-        }
-        
-        const progress = Math.min((time - animationRef.current.startTime) / 1000, 1); // 1 second duration
-        const easeProgress = easeInOutCubic(progress);
-
-        const newZoom = animationRef.current.startZoom + (targetZoom - animationRef.current.startZoom) * easeProgress;
-        const newPanOffset = {
-          x: animationRef.current.startPanOffset.x + (targetPanOffset.x - animationRef.current.startPanOffset.x) * easeProgress,
-          y: animationRef.current.startPanOffset.y + (targetPanOffset.y - animationRef.current.startPanOffset.y) * easeProgress
-        };
-
-        setZoom(newZoom);
-        setPanOffset(newPanOffset);
-
-        if (progress < 1) {
-          animationRef.current.frameId = requestAnimationFrame(animate);
-        } else {
-          // Animation complete
-          if (animationPhase === 'zoomIn') {
-            setAnimationPhase('pause');
-            setTimeout(() => setAnimationPhase('zoomOut'), 1000); // 1 second pause
-          } else {
-            setAnimationPhase(null);
-          }
-        }
-      } else if (animationPhase === 'pause') {
-        // Do nothing during pause
-      } else if (animationPhase === null) {
-        // Animation sequence complete, clean up
-        animationRef.current = null;
+      if (!animationRef.current || animationCompleted) return;
+      
+      // __________________________________________________________________________________
+      const targetFPS = 60;
+      const frameInterval = 1000 / targetFPS;
+    
+      if (time - animationRef.current.lastFrameTime < frameInterval) {
+        animationRef.current.frameId = requestAnimationFrame(animate);
+        return;
       }
+    
+      animationRef.current.lastFrameTime = time;
+      
+      const { startTime, startZoom, startPanOffset, duration } = animationRef.current;
+      const progress = Math.min((time - startTime) / duration, 1);
+      const easeProgress = easeInOutCubic(progress);
 
+      const newZoom = startZoom + (targetZoom - startZoom) * easeProgress;
+      const newPanOffset = {
+        x: startPanOffset.x + (targetPanOffset.x - startPanOffset.x) * easeProgress,
+        y: startPanOffset.y + (targetPanOffset.y - startPanOffset.y) * easeProgress
+      };
+      // ___________________________________________________________________________________
+      setZoom(newZoom);
+      setPanOffset(newPanOffset);
+  
+      if (progress < 1) {
+        animationRef.current.frameId = requestAnimationFrame(animate);
+      } else {
+        if (animationPhase === 'zoomIn') {
+          setAnimationPhase('pause');
+          setTimeout(() => {
+            if (!animationCompleted) {
+              setAnimationPhase('zoomOut');
+              zoomToAllRectangles();
+            }
+          }, 3000);
+        } else if (animationPhase === 'zoomOut') {
+          setAnimationPhase(null);
+          animationRef.current = null;
+          setAnimationCompleted(true);
+        }
+      }
       redrawCanvas();
     };
-
+  
     if (animationPhase === 'zoomIn' || animationPhase === 'zoomOut') {
       if (!animationRef.current) {
         animationRef.current = {
           startTime: performance.now(),
           startZoom: zoom,
-          startPanOffset: { ...panOffset }
+          startPanOffset: { ...panOffset },
+          duration: animationPhase === 'zoomIn' ? 6000 : 8000
         };
-      }
-      animationRef.current.frameId = requestAnimationFrame(animate);
-    } else if (animationPhase === 'pause') {
-      // Start zoom out after pause
-      setTimeout(() => {
-        zoomToAllRectangles();
-        animationRef.current = null; // Reset for next animation
-      }, 1000);
-    }
-
+      } 
+      requestAnimationFrame(animate);
+    } 
+    // else if (animationPhase === 'pause') {
+    //   setTimeout(() => {
+    //     if (!animationCompleted) {
+    //       setAnimationPhase('zoomOut');
+    //       zoomToAllRectangles();
+    //     }
+    //   }, 3000);
+    // }
+  
     return () => {
-      if (animationRef.current && animationRef.current.frameId) {
+      if (animationRef.current?.frameId) {
         cancelAnimationFrame(animationRef.current.frameId);
       }
     };
-  }, [animationPhase, zoom, panOffset, targetZoom, targetPanOffset, redrawCanvas, zoomToAllRectangles]);
+  }, [animationPhase, zoom, panOffset, targetZoom, targetPanOffset, redrawCanvas, zoomToAllRectangles,animationCompleted]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -681,6 +706,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
           images={rect.images} 
           texts={rect.texts} 
           imageSrc={rect.imageSrc}
+          imageEffects={rect.imageEffects || []}
           // zoom={zoom}
           // panX={panOffset.x}
           // panY={panOffset.y}

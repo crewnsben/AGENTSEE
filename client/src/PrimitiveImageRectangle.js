@@ -29,7 +29,7 @@ export const getPrimitiveImageConfig = () => {
   };
 };
 
-const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panOffset }) => {
+const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panOffset,imageEffects=[] }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
@@ -72,6 +72,41 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panOffset 
     setIsDragging(false);
   }, []);
 
+  const getImageStyle = (index) => {
+    const effect = imageEffects[index] || {};
+    let style = {
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+    };
+
+    if (effect.hardlight){
+      style.mixBlendMode= 'hard-light'
+    }
+
+    if (effect.greyscale) {
+      style.filter = `${style.filter || ''} grayscale(100%)`;
+    }
+
+    if (effect.exposure !== undefined) {
+      style.filter = `${style.filter || ''} brightness(${100 + effect.exposure}%)`;
+    }
+
+    if (effect.overlay) {
+      style.mixBlendMode = 'overlay';
+    }
+
+    if (effect.multiply) {
+      style.mixBlendMode = 'multiply';
+    }
+
+    if (effect.difference) {
+      style.mixBlendMode = 'difference';
+    }
+
+    return style;
+  };
+
   React.useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
@@ -82,6 +117,8 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panOffset 
       window.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+
 
   return (
     <div 
@@ -113,11 +150,12 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panOffset 
             src={`${process.env.REACT_APP_API_URL}/images/${images[index] || images[0]}`}
             alt={`Section ${index + 1}`} 
             onError={(e) => console.error(`Error loading image: ${e.target.src}`)}
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }} 
+            style={getImageStyle(index)}
+            // style={{
+            //   width: '100%',
+            //   height: '100%',
+            //   objectFit: 'cover',
+            // }} 
           />
         )}
         </div>
