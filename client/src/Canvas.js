@@ -15,6 +15,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   const [editingRect, setEditingRect] = useState(null);
   const [primitiveRectangles, setPrimitiveRectangles] = useState([]);
   const [processedRectangles, setProcessedRectangles] = useState(new Set());
+  const [showOverlay, setShowOverlay] = useState(false);
 
   const [linkedPairs, setLinkedPairs] = useState([]);
   const [recentRectangles, setRecentRectangles] = useState([]);
@@ -74,6 +75,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     }
   }, [primitiveRectangles, recentRectangles]);
 
+
   const checkAndLinkRectangles = useCallback((newRect) => {
     const now = Date.now();
     setRecentRectangles(prevRecent => {
@@ -109,8 +111,12 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
         type: 'primitiveText',
         indexNumber: primitiveRectangles.length + 1,
         createdAt: Date.now(),
-        isResponse: isResponse
+        isResponse: isResponse,
       };
+
+      setShowOverlay(true);
+      setTimeout(() => setShowOverlay(false), 10000);   //____________________________________________________________________Time for the Rec Button to go Away.
+
       console.log('Creating new rectangle:', newRect);
       setPrimitiveRectangles(prevRects => [...prevRects, newRect]);
       setProcessedRectangles(prev => new Set(prev).add(rectangleId));
@@ -237,19 +243,17 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   
       // Position the new rectangle
       if (lastRect) {
-        // Check if there's enough space to the right of the last rectangle
-        if (lastRect.x + lastRect.width + 50 + newRect.width <= window.innerWidth) {
+        const availableWidth = window.innerWidth / zoom;
+        if (lastRect.x + lastRect.width + 50 + newRect.width <= availableWidth) {
           newRect.x = lastRect.x + lastRect.width + 50;
-          newRect.y = lastRect.y;
+          newRect.y = lastRect.y - panOffset.y
         } else {
-          // If not, place it below the last rectangle
-          newRect.x = 50; // Starting from the left with some margin
-          newRect.y = lastRect.y + lastRect.height + 50;
+          newRect.x = (50 - panOffset.x) / zoom;
+          newRect.y = (lastRect.y + lastRect.height + 50 - panOffset.y) / zoom;
         }
       } else {
-        // If it's the first rectangle, place it at the top-left corner
-        newRect.x = 50;
-        newRect.y = 50;
+        newRect.x = (50 - panOffset.x) / zoom;
+        newRect.y = (50 - panOffset.y) / zoom;
       }
   
       newRect.isResponse = true;
@@ -258,7 +262,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
       console.log('Adding new rectangle:', newRect);
       return [...prevRects, newRect];
     });
-  }, [setRectangles]);
+  }, [setRectangles,zoom,panOffset]);
 
   useEffect(() => {
     const handleNewRectangle = (newRect) => {
@@ -360,6 +364,21 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     };
   }, []);
 
+  useEffect(() => {
+    const handleFileWritten = () => {
+      setShowOverlay(true);
+      setTimeout(() => {
+        setShowOverlay(false);
+      }, 5000); // 5 seconds
+    };
+  
+    socket.on("fileWritten", handleFileWritten);
+  
+    return () => {
+      socket.off("fileWritten", handleFileWritten);
+    };
+  }, [socket]);
+
   const getClickedRectangleIndex = (e) => {
     const { offsetX, offsetY } = e.nativeEvent;
     const x = (offsetX - panOffset.x) / zoom;
@@ -438,6 +457,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   }, [redrawCanvas]);
 
 
+
   // const handlePrimitiveRectangleCreation = useCallback((content) => {
   //   const gridSize = 10; // This should match the grid size in BackgroundManager
   //   const newRect = {
@@ -482,9 +502,17 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
       switch (rect.type) {
         case 'primitiveText':
         case 'primitive':
-          return <PrimitiveInputRectangle {...commonProps} />;
+          return <PrimitiveInputRectangle 
+          {...commonProps} />;
         case 'primitiveImage':
-          return <PrimitiveImageRectangle {...commonProps} images={rect.images} texts={rect.texts} imageSrc={rect.imageSrc}/>;    // Check THis___________________________________
+          return <PrimitiveImageRectangle 
+          {...commonProps} 
+          images={rect.images} 
+          texts={rect.texts} 
+          imageSrc={rect.imageSrc}
+          zoom={zoom}
+          panX={panOffset.x}
+          panY={panOffset.y}/>;    // Check THis___________________________________
         default:
           console.warn(`Unknown rectangle type: ${rect.type}`);
           return null;
@@ -520,6 +548,28 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
         }}
       />
       {renderRectangles()}
+      <style>
+        {`
+          @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+          }
+        `}
+      </style>
+      {showOverlay && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '10px',
+            left: '10px',
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            backgroundColor: '#8B0000',
+            animation: 'fadeInOut 2s ease-in-out infinite'
+          }}
+        />
+      )}
     </div>
   );
 };

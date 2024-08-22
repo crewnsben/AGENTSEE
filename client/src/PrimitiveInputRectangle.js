@@ -10,7 +10,7 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom,isLinked,panOffset }) => {
   const maxHeight = 400; // Maximum height of the rectangle
   const columnGap = 10; // Gap between columns
 
-  const isResponse = rect.id.startsWith('response_');
+  const isResponse = rect.id.startsWith('res');
 
   const { columns, totalWidth } = useMemo(() => {
     const canvas = document.createElement('canvas');
@@ -96,7 +96,7 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom,isLinked,panOffset }) => {
             fontSize: `${14 * zoom}px`,
             lineHeight: `${14 * zoom * 1.2}px`,
             whiteSpace: 'pre-wrap',
-            color: isResponse ? '#000080' : 'inherit', // Dark blue text for responses
+            color: isResponse ? '#f5f5f5' : 'inherit', // Dark blue text for responses
           }}>
             {columnIndex === 0 && lineIndex === 0 ? (
               <Typewriter
@@ -154,15 +154,15 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom,isLinked,panOffset }) => {
           width: `${totalWidth}px`,
           height: `${maxHeight * zoom}px`,
           borderRadius: isResponse ? '10px' : '0px',
-          border: isResponse ? '2px solid #4169E1' : 'none', // Royal blue border for responses
+          border: 'none', // Royal blue border for responses
           cursor: isDragging ? 'grabbing' : 'grab',
-          boxShadow: isResponse ? '0 4px 8px rgba(65,105,225,0.3)' : '0 4px 8px rgba(0,0,0,0)',
+          boxShadow: '0 4px 8px rgba(0,0,0,0)',
           overflow: 'visible',
           display: 'flex',
           flexDirection: 'column',
           padding: `${20 * zoom}px`,
           flexDirection: 'row',
-          backgroundColor: isResponse ? '#F0F8FF' : 'transparent', // Light blue background for responses
+          backgroundColor: 'transparent', // Light blue background for responses
         }}
       onMouseDown={handleMouseDown}
     >
@@ -172,9 +172,9 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom,isLinked,panOffset }) => {
           position: 'absolute',
           top: '0px',
           right: `${20 * zoom}px`,
-          width: `${60 * zoom}px`,
+          width: isResponse? '33%':`${60 * zoom}px`,
           height: `${20 * zoom}px`,
-          backgroundColor: isResponse ? '#4169E1' : '#0000FF',
+          backgroundColor: isResponse ? '#36454F' : '#0000FF',
           color: '#FFFFFF',
           display: 'flex',
           alignItems: 'center',
@@ -185,7 +185,7 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom,isLinked,panOffset }) => {
           borderBottomLeftRadius: '5px',
         }}
       >
-        {isResponse ? 'Agent' : 'whisper'}
+        {isResponse ? 'Agent Response' : 'whisper'}
       </div>
 
       {/* Text content */}
@@ -194,9 +194,9 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom,isLinked,panOffset }) => {
           padding: `${20 * zoom}px`,
           display: 'flex',
           flexDirection: 'row',
-          height: '100%',
+          height: '90%',
           overflowY: 'hidden',
-          backgroundColor: '#f5f5f5'
+          backgroundColor: isResponse? '#2b2b2b':'#f5f5f5',
         }}
       >
         {renderText()}
@@ -206,11 +206,13 @@ const PrimitiveInputRectangle = ({ rect, onMove, zoom,isLinked,panOffset }) => {
       <div
         style={{
           position: 'absolute',
-          bottom: `${-40 * zoom}px`,
+          bottom: `${-30 * zoom}px`,
+          height: '10%',
           right: `${20 * zoom}px`,
           fontSize: `${14 * zoom}px`,
           fontWeight: `${400 * zoom}px`,
-          color: isResponse ? '#4169E1' : '#999999', // Royal blue for responses
+          alignContent:'center',
+          color: '#999999', // Royal blue for responses
         }}
       >
         {`index_${rect.indexNumber?.toString().padStart(3, '0')}`}

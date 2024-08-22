@@ -1,0 +1,7 @@
+Speaker 1: Bro, stop using 11 gigabytes file.
+Speaker 2: No, I just want to know why it's not showing.
+Speaker 1: I got it in Blender, it's working properly.
+Speaker 3: Maybe it's a compatibility issue with your software.
+Speaker 2: What do you mean? I thought it was all set up right.
+Speaker 1: Sometimes, large files can cause problems if your system isn't optimized for it.
+Speaker 3: Have you tried reducing the file size or checking the settings?

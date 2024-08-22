@@ -3,9 +3,9 @@ import React, { useState, useCallback, useRef } from 'react';
 // New function to get the configuration
 export const getPrimitiveImageConfig = () => {
   const canvasPadding = 50;
-  const largestWidth = 450;
-  const secondLargestWidth = 180;
-  const smallWidth = 30;
+  const largestWidth = (Math.random()<1)? 450 : 660 ;
+  const secondLargestWidth =largestWidth* 0.61;
+  const smallWidth = largestWidth*0.305;
   const textBlockWidth = 50;
   const reducedPadding = 11 / 3;
 
@@ -29,7 +29,7 @@ export const getPrimitiveImageConfig = () => {
   };
 };
 
-const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
+const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panX, panY }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
@@ -40,8 +40,9 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
   const isOverVisiblePart = (e) => {
     if (!containerRef.current) return false;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoom;
+    const y = (e.clientY - rect.top) / zoom;
+
 
     return imageLayout.some(layout => 
       x >= layout.left && x <= layout.left + layout.width &&
@@ -52,17 +53,20 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
   const handleMouseDown = (e) => {
     if (isOverVisiblePart(e)) {
       setIsDragging(true);
-      setDragStart({ x: e.clientX - rect.x, y: e.clientY - rect.y });
+      setDragStart({ 
+        x: e.clientX / zoom - rect.x, 
+        y: e.clientY / zoom - rect.y 
+      });
     }
   };
 
   const handleMouseMove = useCallback((e) => {
     if (isDragging) {
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
+      const newX = e.clientX / zoom - dragStart.x;
+      const newY = e.clientY / zoom - dragStart.y;
       onMove(rect.id, newX, newY);
     }
-  }, [isDragging, dragStart, onMove, rect.id]);
+  }, [isDragging, dragStart, onMove, rect.id, zoom]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -83,12 +87,14 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
     <div 
       ref={containerRef}
       style={{
-        position: 'absolute',
-        left: rect.x,
-        top: rect.y,
-        width: canvasWidth,
-        height: canvasHeight,
+        position: 'relative',
+        left: (rect.x + panX) * zoom,
+        top: (rect.y + panY)*zoom,
+        width: canvasWidth*zoom,
+        height: canvasHeight*zoom,
         cursor: isDragging ? 'grabbing' : 'grab',
+        transform: `scale(${zoom})`,
+        transformOrigin: 'top left',
         // ... (other styles remain the same)
       }}
       onMouseDown={handleMouseDown}
@@ -116,7 +122,16 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts }) => {
         )}
         </div>
       ))}
-      <div style={{ position: 'absolute', bottom: 5, right: 5, display: 'flex', justifyContent: 'space-around', padding: '5px' }}>
+      <div style={{ 
+        position: 'absolute',
+        bottom: 5, 
+        right: 5, 
+        display: 'flex', 
+        justifyContent: 'space-around', 
+        padding: '5px',
+        transform: `scale(${1/zoom})`,
+        transformOrigin: 'bottom right',
+         }}>
         {texts.map((text, index) => (
           <span key={index} style={{ marginRight: '5px', fontSize: '12px' }}>{text || `${index + 1}`}</span>
         ))}
