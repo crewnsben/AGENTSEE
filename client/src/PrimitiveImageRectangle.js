@@ -11,16 +11,16 @@ export const getPrimitiveImageConfig = () => {
 
   const imageLayout = [
     { width: largestWidth, height: largestWidth + 25, left: canvasPadding + 12.5, top: canvasPadding + 12.5, zoom: 1 },
-    { width: textBlockWidth, height: smallWidth, left: canvasPadding + 12.5 + largestWidth + 2.75, top: canvasPadding + 12.5 + largestWidth + 25 - secondLargestWidth - 12.5 - smallWidth - 2.75, zoom: 1 },
-    { width: secondLargestWidth, height: secondLargestWidth + 12.5, left: canvasPadding + 12.5 + largestWidth + 2.75, top: canvasPadding + 12.5 + largestWidth + 25 - secondLargestWidth - 12.5, zoom: 1 },
-    { width: smallWidth, height: smallWidth, left: canvasPadding + 12.5, top: canvasPadding + 12.5 - smallWidth - 2.75, zoom: 1 },
-    { width: smallWidth, height: smallWidth, left: canvasPadding + 12.5 + largestWidth - smallWidth, top: canvasPadding + 12.5 + largestWidth + 25 + 2.75, zoom: 1 },
-    { width: smallWidth, height: smallWidth, left: canvasPadding + 12.5 + largestWidth - smallWidth + smallWidth + reducedPadding, top: canvasPadding + 12.5 + largestWidth + 25 + 2.75, zoom: 1 },
-    { width: smallWidth, height: smallWidth, left: canvasPadding + 12.5 + largestWidth - smallWidth + 2 * (smallWidth + reducedPadding), top: canvasPadding + 12.5 + largestWidth + 25 + 2.75, zoom: 1 },
+    // { width: textBlockWidth, height: smallWidth, left: canvasPadding + 12.5 + largestWidth + 2.75, top: canvasPadding + 12.5 + largestWidth + 25 - secondLargestWidth - 12.5 - smallWidth - 2.75, zoom: 1 },
+    // { width: secondLargestWidth, height: secondLargestWidth + 12.5, left: canvasPadding + 12.5 + largestWidth + 2.75, top: canvasPadding + 12.5 + largestWidth + 25 - secondLargestWidth - 12.5, zoom: 1 },
+    // { width: smallWidth, height: smallWidth, left: canvasPadding + 12.5, top: canvasPadding + 12.5 - smallWidth - 2.75, zoom: 1 },
+    // { width: smallWidth, height: smallWidth, left: canvasPadding + 12.5 + largestWidth - smallWidth, top: canvasPadding + 12.5 + largestWidth + 25 + 2.75, zoom: 1 },
+    // { width: smallWidth, height: smallWidth, left: canvasPadding + 12.5 + largestWidth - smallWidth + smallWidth + reducedPadding, top: canvasPadding + 12.5 + largestWidth + 25 + 2.75, zoom: 1 },
+    // { width: smallWidth, height: smallWidth, left: canvasPadding + 12.5 + largestWidth - smallWidth + 2 * (smallWidth + reducedPadding), top: canvasPadding + 12.5 + largestWidth + 25 + 2.75, zoom: 1 },
   ];
 
-  const canvasWidth = largestWidth + secondLargestWidth + canvasPadding * 2 + 2.75;
-  const canvasHeight = largestWidth + 25 + canvasPadding * 2;
+  const canvasWidth = largestWidth ;
+  const canvasHeight = largestWidth ;
 
   return {
     imageLayout,
@@ -124,11 +124,11 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panOffset,
     <div 
       ref={containerRef}
       style={{
-        position: 'relative',
+        position: 'absolute',
         left: `${rect.x}px`,
         top: `${rect.y}px`,
-        width: canvasWidth*zoom,
-        height: canvasHeight*zoom,
+        width: `${rect.width}px`, // Use rect.width instead of canvasWidth
+        height: `${rect.height}px`,
         cursor: isDragging ? 'grabbing' : 'grab',
         transform: `scale(${zoom})`,
         transformOrigin: 'top left',
@@ -160,20 +160,6 @@ const PrimitiveImageRectangle = ({ rect, onMove, images, texts, zoom, panOffset,
         )}
         </div>
       ))}
-      <div style={{ 
-        position: 'absolute',
-        bottom: 5, 
-        right: 5, 
-        display: 'flex', 
-        justifyContent: 'space-around', 
-        padding: '5px',
-        transform: `scale(${1/zoom})`,
-        transformOrigin: 'bottom right',
-         }}>
-        {texts.map((text, index) => (
-          <span key={index} style={{ marginRight: '5px', fontSize: '12px' }}>{text || `${index + 1}`}</span>
-        ))}
-      </div>
     </div>
   );
 };

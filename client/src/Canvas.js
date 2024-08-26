@@ -16,6 +16,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   const [primitiveRectangles, setPrimitiveRectangles] = useState([]);
   const [processedRectangles, setProcessedRectangles] = useState(new Set());
   const [showOverlay, setShowOverlay] = useState(false);
+  const [rectangleCount, setRectangleCount] = useState(0);
 
   const [linkedPairs, setLinkedPairs] = useState([]);
   const [recentRectangles, setRecentRectangles] = useState([]);
@@ -46,48 +47,96 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     setCanvasSize({ width: window.innerWidth, height: window.innerHeight });
   }, []);
 
+
   const getNextPosition = useCallback(() => {
-    const now = Date.now();
-    const recentRect = recentRectangles[recentRectangles.length - 1];
+    const allRectangles = [...primitiveRectangles, ...rectangles];
+    const margin = 20;
+    const maxDistance = 200;
+    const minDistance = 50;
+  
+    if (allRectangles.length === 0) {
+      return {
+        x: window.innerWidth / 2,
+        y: window.innerHeight / 2
+      };
+    }
+  
+    const recentRectangles = allRectangles.slice(-5); // Consider last 5 rectangles
+    const avgX = recentRectangles.reduce((sum, rect) => sum + rect.x, 0) / recentRectangles.length;
+    const avgY = recentRectangles.reduce((sum, rect) => sum + rect.y, 0) / recentRectangles.length;
+  
+    let attempts = 0;
+    let newX, newY;
+  
+    do {
+      const angle = Math.random() * 2 * Math.PI;
+      const distance = (Math.random() * maxDistance) - minDistance;
+      newX = avgX + Math.cos(angle) * distance;
+      newY = avgY + Math.sin(angle) * distance;
+  
+      // Ensure the rectangle is within the viewport
+      // newX = Math.max(margin, Math.min(newX, window.innerWidth - margin));
+      // newY = Math.max(margin, Math.min(newY, window.innerHeight - margin));
+  
+      attempts++;
+    } while (
+      attempts < 10 &&
+      allRectangles.some(rect => 
+        Math.abs(rect.x - newX) < margin * 2 && Math.abs(rect.y - newY) < margin * 2
+      )
+    );
+  
+    // If we couldn't find a non-overlapping position, slightly adjust the last valid position
+    if (attempts === 10) {
+      newX += (Math.random() - 0.5) * margin;
+      newY += (Math.random() - 0.5) * margin;
+    }
+  
+    return { x: newX, y: newY };
+  }, [primitiveRectangles, rectangles]);
+
+  // const getNextPosition = useCallback(() => {
+  //   const now = Date.now();
+  //   const recentRect = recentRectangles[recentRectangles.length - 1];
     
 
-    if (recentRect && now - recentRect.createdAt <= 100000) {
-      // If there's a recent rectangle within 100 seconds, position near it
-      const valueX =(Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random()*(300)) + 400);
-      const offsetX = valueX; // Random offset between -50 and 50
-      const offsetY =(Math.random() < 0.5 ? -1 : 1) * (Math.random() * 200);
+  //   if (recentRect && now - recentRect.createdAt <= 100000) {
+  //     // If there's a recent rectangle within 100 seconds, position near it
+  //     const valueX =(Math.random() < 0.5 ? -1 : 1) * (Math.floor(Math.random()*(300)) + 400);
+  //     const offsetX = valueX; // Random offset between -50 and 50
+  //     const offsetY =(Math.random() < 0.5 ? -1 : 1) * (Math.random() * 200);
 
-      return {
-        x: recentRect.x + offsetX,
-        y: recentRect.y + offsetY
-      };
-    } else {
-      // Original positioning logic
-      const gridSize = 50;
-      const rectangleWidth = 300;
-      const rectangleHeight = 200;
+  //     return {
+  //       x: recentRect.x + offsetX,
+  //       y: recentRect.y + offsetY
+  //     };
+  //   } else {
+  //     // Original positioning logic
+  //     const gridSize = 50;
+  //     const rectangleWidth = 300;
+  //     const rectangleHeight = 200;
 
-      if (primitiveRectangles.length === 0) {
-        // First rectangle in the center
-        const centerX = window.innerWidth / 2 - rectangleWidth / 2;
-        const centerY = window.innerHeight / 2 - rectangleHeight / 2;
-        return { x: centerX, y: centerY };
-      } else {
-        // Subsequent rectangles
-        const lastRect = primitiveRectangles[primitiveRectangles.length - 1];
-        let newX = lastRect.x + rectangleWidth * 5 + gridSize;
-        let newY = lastRect.y;
+  //     if (primitiveRectangles.length === 0) {
+  //       // First rectangle in the center
+  //       const centerX = window.innerWidth / 2 - rectangleWidth / 2;
+  //       const centerY = window.innerHeight / 2 - rectangleHeight / 2;
+  //       return { x: centerX, y: centerY };
+  //     } else {
+  //       // Subsequent rectangles
+  //       const lastRect = primitiveRectangles[primitiveRectangles.length - 1];
+  //       let newX = lastRect.x + rectangleWidth * 5 + gridSize;
+  //       let newY = lastRect.y;
 
-        // If we reach the edge of the screen, move to the next row
-        if (newX + rectangleWidth > window.innerWidth) {
-          newX = gridSize;
-          newY = lastRect.y + rectangleHeight + gridSize;
-        }
+  //       // If we reach the edge of the screen, move to the next row
+  //       if (newX + rectangleWidth > window.innerWidth) {
+  //         newX = gridSize;
+  //         newY = lastRect.y + rectangleHeight + gridSize;
+  //       }
 
-        return { x: newX, y: newY };
-      }
-    }
-  }, [primitiveRectangles, recentRectangles]);
+  //       return { x: newX, y: newY };
+  //     }
+  //   }
+  // }, [primitiveRectangles, recentRectangles]);
 
 
   const checkAndLinkRectangles = useCallback((newRect) => {
@@ -113,8 +162,8 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     const canvasHeight = canvas.height;
 
     // Calculate zoom to fit the rectangle
-    const zoomX = canvasWidth / (rect.width * 1.5);
-    const zoomY = canvasHeight / (rect.height * 1.5);
+    const zoomX = canvasWidth / (rect.width * 2.5);
+    const zoomY = canvasHeight / (rect.height * 2.5);
     const newZoom = Math.min(zoomX, zoomY);
 
     const centerX = rect.x + rect.width / 2;
@@ -132,7 +181,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
       lastFrameTime: performance.now(),
       startZoom: zoom,
       startPanOffset: { ...panOffset },
-      duration: 6000, // 2 seconds for zoom in
+      duration: 10000, // 2 seconds for zoom in
       // auseDuration: 3000, // 1.5 seconds pause
       // zoomOutDuration: 2000 // 2.5 seconds for zoom out
     };
@@ -142,47 +191,89 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   }, [zoom,panOffset]);
 
   const zoomToAllRectangles = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || primitiveRectangles.length === 0) return;
-
-    // const minX = Math.min(...primitiveRectangles.map(r => r.x));
-    // const minY = Math.min(...primitiveRectangles.map(r => r.y));
-    // const maxX = Math.max(...primitiveRectangles.map(r => r.x + r.width));
-    // const maxY = Math.max(...primitiveRectangles.map(r => r.y + r.height));
-    // _____________________________________________________________________________________________________________LSTUPDTS
-    const allRects = [...primitiveRectangles, ...rectangles];
-    const minX = Math.min(...allRects.map(r => r.x));
-    const minY = Math.min(...allRects.map(r => r.y));
-    const maxX = Math.max(...allRects.map(r => r.x + r.width));
-    const maxY = Math.max(...allRects.map(r => r.y + r.height));
-     // _____________________________________________________________________________________________________________LSTUPDTS
-
-    const width = maxX - minX;
-    const height = maxY - minY;
-
-    const zoomX = canvas.width / (width * 1.1);
-    const zoomY = canvas.height / (height * 1.1);
-    const newZoom = Math.min(zoomX, zoomY, 1); // Limit zoom out to 1
-
-    const centerX = (minX + maxX) / 2;
-    const centerY = (minY + maxY) / 2;
-
-    setTargetZoom(newZoom);
-    setTargetPanOffset({
-      x: canvas.width / 2 - centerX * newZoom,
-      y: canvas.height / 2 - centerY * newZoom
+    setRectangleCount(prevCount => {
+      const newCount = prevCount + 1;
+      if (newCount % 10 === 0) {
+        const canvas = canvasRef.current;
+        if (!canvas || (primitiveRectangles.length === 0 && rectangles.length === 0)) return prevCount;
+  
+        const allRects = [...primitiveRectangles, ...rectangles];
+        const minX = Math.min(...allRects.map(r => r.x));
+        const minY = Math.min(...allRects.map(r => r.y));
+        const maxX = Math.max(...allRects.map(r => r.x + r.width));
+        const maxY = Math.max(...allRects.map(r => r.y + r.height));
+  
+        const width = maxX - minX;
+        const height = maxY - minY;
+  
+        const zoomX = canvas.width / (width * 1.1);
+        const zoomY = canvas.height / (height * 1.1);
+        const newZoom = Math.min(zoomX, zoomY, 1); // Limit zoom out to 1
+  
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+  
+        setTargetZoom(newZoom);
+        setTargetPanOffset({
+          x: canvas.width / 2 - centerX * newZoom,
+          y: canvas.height / 2 - centerY * newZoom
+        });
+  
+        animationRef.current = {
+          startTime: performance.now(),
+          startZoom: zoom,
+          startPanOffset: { ...panOffset },
+          duration: 6000 // 3 seconds for zoom out
+        };
+  
+        setAnimationPhase('zoomOut');
+      }
+      return newCount;
     });
+  }, [primitiveRectangles, rectangles, zoom, panOffset, canvasRef]);
+  
+  // const zoomToAllRectangles = useCallback(() => {
+  //   const canvas = canvasRef.current;
+  //   if (!canvas || primitiveRectangles.length === 0) return;
 
-    animationRef.current = {
-      startTime: performance.now(),
-      startZoom: zoom,
-      startPanOffset: { ...panOffset },
-      duration: 6000 // 3 seconds for zoom out
-    };
+  //   // const minX = Math.min(...primitiveRectangles.map(r => r.x));
+  //   // const minY = Math.min(...primitiveRectangles.map(r => r.y));
+  //   // const maxX = Math.max(...primitiveRectangles.map(r => r.x + r.width));
+  //   // const maxY = Math.max(...primitiveRectangles.map(r => r.y + r.height));
+  //   // _____________________________________________________________________________________________________________LSTUPDTS
+  //   const allRects = [...primitiveRectangles, ...rectangles];
+  //   const minX = Math.min(...allRects.map(r => r.x));
+  //   const minY = Math.min(...allRects.map(r => r.y));
+  //   const maxX = Math.max(...allRects.map(r => r.x + r.width));
+  //   const maxY = Math.max(...allRects.map(r => r.y + r.height));
+  //    // _____________________________________________________________________________________________________________LSTUPDTS
+
+  //   const width = maxX - minX;
+  //   const height = maxY - minY;
+
+  //   const zoomX = canvas.width / (width * 1.1);
+  //   const zoomY = canvas.height / (height * 1.1);
+  //   const newZoom = Math.min(zoomX, zoomY, 1); // Limit zoom out to 1
+
+  //   const centerX = (minX + maxX) / 2;
+  //   const centerY = (minY + maxY) / 2;
+
+  //   setTargetZoom(newZoom);
+  //   setTargetPanOffset({
+  //     x: canvas.width / 2 - centerX * newZoom,
+  //     y: canvas.height / 2 - centerY * newZoom
+  //   });
+
+  //   animationRef.current = {
+  //     startTime: performance.now(),
+  //     startZoom: zoom,
+  //     startPanOffset: { ...panOffset },
+  //     duration: 6000 // 3 seconds for zoom out
+  //   };
     
-    // setAnimationCompleted(false);
-    setAnimationPhase('zoomOut');// MAYBE HERE NULL____________________________________________________________________________
-  }, [primitiveRectangles,rectangles,zoom,panOffset]);
+  //   // setAnimationCompleted(false);
+  //   setAnimationPhase('zoomOut');// MAYBE HERE NULL____________________________________________________________________________
+  // }, [primitiveRectangles,rectangles,zoom,panOffset]);
 
   const handleNewPrimitiveRectangle = useCallback(({ content, filename }) => {
     console.log('handleNewPrimitiveRectangle called with:', { content, filename });
@@ -190,7 +281,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
     console.log('Is response:', isResponse);
     const rectangleId = isResponse ? filename : `primitive_${Date.now()}`;
     console.log('Assigned rectangleId:', rectangleId);
-
+  
     if (!processedRectangles.has(rectangleId)) {
       const { width, height } = calculateTextDimensions(content, 14, 300);
       const { x, y } = getNextPosition();
@@ -206,30 +297,71 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
         createdAt: Date.now(),
         isResponse: isResponse,
       };
-
+  
       setShowOverlay(true);
-      setTimeout(() => setShowOverlay(false), 10000);   //____________________________________________________________________Time for the Rec Button to go Away.
-
-      
-      
+      setTimeout(() => setShowOverlay(false), 10000);
+  
       console.log('Creating new rectangle:', newRect);
-      setPrimitiveRectangles(prevRects => {  //_______________________________________________Here
+      setPrimitiveRectangles(prevRects => {
         const updatedRects = [...prevRects, newRect];
-        // Trigger zoom animation after state update
         setTimeout(() => startZoomAnimation(newRect), 0);
+        zoomToAllRectangles(); // New line added here
         return updatedRects;
-      });//_________________________________________________________________________________TOHERE
+      });
       setProcessedRectangles(prev => new Set(prev).add(rectangleId));
       checkAndLinkRectangles(newRect);
-
-      // zoomToRectangle(newRect);
-
-       // Trigger zoom out after a delay
-       startZoomAnimation(newRect);
-    }else{
+    } else {
       console.log('Rectangle already processed:', rectangleId);
     }
-  }, [getNextPosition, primitiveRectangles.length, processedRectangles, checkAndLinkRectangles, zoomToAllRectangles,startZoomAnimation]);
+  }, [getNextPosition, primitiveRectangles.length, processedRectangles, checkAndLinkRectangles, startZoomAnimation, zoomToAllRectangles]);
+  
+
+  // const handleNewPrimitiveRectangle = useCallback(({ content, filename }) => {
+  //   console.log('handleNewPrimitiveRectangle called with:', { content, filename });
+  //   const isResponse = filename ? filename.startsWith("res") : false;
+  //   console.log('Is response:', isResponse);
+  //   const rectangleId = isResponse ? filename : `primitive_${Date.now()}`;
+  //   console.log('Assigned rectangleId:', rectangleId);
+
+  //   if (!processedRectangles.has(rectangleId)) {
+  //     const { width, height } = calculateTextDimensions(content, 14, 300);
+  //     const { x, y } = getNextPosition();
+  //     const newRect = {
+  //       id: rectangleId,
+  //       x,
+  //       y,
+  //       width: Math.max(300, width + 20),
+  //       height: Math.max(200, height + 60),
+  //       text: content,
+  //       type: 'primitiveText',
+  //       indexNumber: primitiveRectangles.length + 1,
+  //       createdAt: Date.now(),
+  //       isResponse: isResponse,
+  //     };
+
+  //     setShowOverlay(true);
+  //     setTimeout(() => setShowOverlay(false), 10000);   //____________________________________________________________________Time for the Rec Button to go Away.
+
+      
+      
+  //     console.log('Creating new rectangle:', newRect);
+  //     setPrimitiveRectangles(prevRects => {  //_______________________________________________Here
+  //       const updatedRects = [...prevRects, newRect];
+  //       // Trigger zoom animation after state update
+  //       setTimeout(() => startZoomAnimation(newRect), 0);
+  //       return updatedRects;
+  //     });//_________________________________________________________________________________TOHERE
+  //     setProcessedRectangles(prev => new Set(prev).add(rectangleId));
+  //     checkAndLinkRectangles(newRect);
+
+  //     // zoomToRectangle(newRect);
+
+  //      // Trigger zoom out after a delay
+  //      startZoomAnimation(newRect);
+  //   }else{
+  //     console.log('Rectangle already processed:', rectangleId);
+  //   }
+  // }, [getNextPosition, primitiveRectangles.length, processedRectangles, checkAndLinkRectangles, zoomToAllRectangles,startZoomAnimation]);
   
   const preventBrowserZoom = useCallback((e) => {
     if (e.ctrlKey) {
@@ -315,72 +447,119 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   }, [clearCanvas, zoom, panOffset, cursors, drawTriangle, drawLines]);
 //  +_________________________________________________________________+++++++++++++++++++++++
 
-  const handleNewComfyUIResponse = useCallback(({ filename, content, type, rectangle }) => {
-    console.log('Received new ComfyUI response:', filename, type, content);
-    setRectangles(prevRects => {
-      const lastRect = prevRects[prevRects.length - 1];
-      let newRect = { ...rectangle };
-  
-      const typeHandlers = {
-        image: () => {
-          const { imageLayout, canvasWidth, canvasHeight } = getPrimitiveImageConfig();
-          return {
-            ...newRect,
-            id: `image_${Date.now()}`,
-            type: 'primitiveImage',
-            imageSrc: `${process.env.REACT_APP_API_URL}/images/${filename}`,
-            width: canvasWidth,
-            height: canvasHeight,
-            images: Array(imageLayout.length).fill(filename),
-            texts: Array(imageLayout.length).fill(''),
-            imageLayout,
-            imageEffects: Array(imageLayout.length).fill({}) 
-          };
-        },
-        text: () => ({
-          ...newRect,
-          width: Math.max(300, newRect.width || 0),
-          height: Math.max(200, newRect.height || 0),
-          text: content,
-          type: 'primitiveText'
-        }),
-        search: () => ({
-          ...newRect,
-          width: Math.max(300, newRect.width || 0),
-          height: Math.max(200, newRect.height || 0),
-          text: content,
-          type: 'primitiveSearch'
-        }),
-      };
-  
-      const typeHandler = typeHandlers[type] || (() => newRect);
-      newRect = typeHandler();
-  
-      // Position the new rectangle
-      if (lastRect) {
-        const availableWidth = window.innerWidth / zoom;
-        if (lastRect.x + lastRect.width + 50 + newRect.width <= availableWidth) {
-          newRect.x = lastRect.x + lastRect.width + 50;
-          newRect.y = lastRect.y - panOffset.y
-        } else {
-          newRect.x = (50 - panOffset.x) / zoom;
-          newRect.y = (lastRect.y + lastRect.height + 50 - panOffset.y) / zoom;
-        }
-      } else {
-        newRect.x = (50 - panOffset.x) / zoom;
-        newRect.y = (50 - panOffset.y) / zoom;
-      }
-  
-      newRect.isResponse = true;
-      newRect.index = prevRects.length;
-  
-      console.log('Adding new rectangle:', newRect);
+const handleNewComfyUIResponse = useCallback(({ filename, content, type, rectangle }) => {
+  console.log('Received new ComfyUI response:', filename, type, content);
+  setRectangles(prevRects => {
+    const lastRect = prevRects[prevRects.length - 1];
+    let newRect = { ...rectangle };
 
-      setTimeout(() => startZoomAnimation(newRect), 0);//__________________________________
+    const typeHandlers = {
+      image: () => {
+        const { imageLayout, canvasWidth, canvasHeight } = getPrimitiveImageConfig();
+        return {
+          ...newRect,
+          id: `image_${Date.now()}`,
+          type: 'primitiveImage',
+          imageSrc: `${process.env.REACT_APP_API_URL}/images/${filename}`,
+          width: canvasWidth,
+          height: canvasHeight,
+          createdAt: Date.now(),
+          images: Array(imageLayout.length).fill(filename),
+          texts: Array(imageLayout.length).fill(''),
+          imageLayout,
+          imageEffects: Array(imageLayout.length).fill({}) ,
+          indexNumber: primitiveRectangles.length + 1, // for primitive rectangles
+        };
+      },
+      text: () => ({
+        ...newRect,
+        width: Math.max(300, newRect.width || 0),
+        height: Math.max(200, newRect.height || 0),
+        text: content,
+        type: 'primitiveText'
+      }),
+      search: () => ({
+        ...newRect,
+        width: Math.max(300, newRect.width || 0),
+        height: Math.max(200, newRect.height || 0),
+        text: content,
+        type: 'primitiveSearch'
+      }),
+    };
 
-      return [...prevRects, newRect];
-    });
-  }, [setRectangles,zoom,panOffset,startZoomAnimation]);
+    const typeHandler = typeHandlers[type] || (() => newRect);
+    newRect = typeHandler();
+
+    const { x, y } = getNextPosition();
+    newRect.x = x;
+    newRect.y = y;
+
+    newRect.isResponse = true;
+    newRect.index = prevRects.length;
+
+    console.log('Adding new rectangle:', newRect);
+
+    const updatedRects = [...prevRects, newRect];
+    setTimeout(() => startZoomAnimation(newRect), 0);
+    zoomToAllRectangles(); // New line added here
+    return updatedRects;
+  });
+}, [setRectangles, getNextPosition, startZoomAnimation, zoomToAllRectangles]);
+
+  // const handleNewComfyUIResponse = useCallback(({ filename, content, type, rectangle }) => {
+  //   console.log('Received new ComfyUI response:', filename, type, content);
+  //   setRectangles(prevRects => {
+  //     const lastRect = prevRects[prevRects.length - 1];
+  //     let newRect = { ...rectangle };
+  
+  //     const typeHandlers = {
+  //       image: () => {
+  //         const { imageLayout, canvasWidth, canvasHeight } = getPrimitiveImageConfig();
+  //         return {
+  //           ...newRect,
+  //           id: `image_${Date.now()}`,
+  //           type: 'primitiveImage',
+  //           imageSrc: `${process.env.REACT_APP_API_URL}/images/${filename}`,
+  //           width: canvasWidth,
+  //           height: canvasHeight,
+  //           images: Array(imageLayout.length).fill(filename),
+  //           texts: Array(imageLayout.length).fill(''),
+  //           imageLayout,
+  //           imageEffects: Array(imageLayout.length).fill({}) 
+  //         };
+  //       },
+  //       text: () => ({
+  //         ...newRect,
+  //         width: Math.max(300, newRect.width || 0),
+  //         height: Math.max(200, newRect.height || 0),
+  //         text: content,
+  //         type: 'primitiveText'
+  //       }),
+  //       search: () => ({
+  //         ...newRect,
+  //         width: Math.max(300, newRect.width || 0),
+  //         height: Math.max(200, newRect.height || 0),
+  //         text: content,
+  //         type: 'primitiveSearch'
+  //       }),
+  //     };
+  
+  //     const typeHandler = typeHandlers[type] || (() => newRect);
+  //     newRect = typeHandler();
+  
+  //     const { x, y } = getNextPosition();
+  //     newRect.x = x;
+  //     newRect.y = y;
+  
+  //     newRect.isResponse = true;
+  //     newRect.index = prevRects.length;
+  
+  //     console.log('Adding new rectangle:', newRect);
+  //     setTimeout(() => startZoomAnimation(newRect), 0);
+  
+  //     return [...prevRects, newRect];
+  //   });
+  // }, [setRectangles,zoom,panOffset,startZoomAnimation]);
 
   const easeInOutCubic = (t) => {
     return t < 0.5
@@ -672,10 +851,23 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
   // }, [safeRectangles, setRectangles, socket]);
 
   const renderRectangles = useCallback(() => {
-    const allRectangles = [...primitiveRectangles, ...rectangles];
-    return allRectangles.map(rect => {
+    // const allRectangles = [...primitiveRectangles, ...rectangles];
+    const allRectangles = [...primitiveRectangles, ...rectangles].sort((a, b) => {
+      // Sort by creation time if available
+      if (a.createdAt && b.createdAt) {
+        return a.createdAt - b.createdAt;
+      }
+      // If createdAt is not available, use the indexNumber for primitiveRectangles
+      // or the index for regular rectangles
+      const aIndex = a.indexNumber !== undefined ? a.indexNumber : a.index;
+      const bIndex = b.indexNumber !== undefined ? b.indexNumber : b.index;
+      return aIndex - bIndex;
+    });
+    return allRectangles.map((rect,index) => {
       const isLinked = linkedPairs.some(pair => pair.rect1 === rect.id || pair.rect2 === rect.id);
       const isResponse = rect.id.startsWith('res');
+      const zIndex = index + 1; // Assign z-index based on sorted order
+
       const commonProps = {
         key: rect.id,
         rect: {
@@ -691,6 +883,7 @@ const Canvas = ({ userId, rectangles = [], setRectangles, cursors, socket }) => 
         isLinked,
         panOffset,
         isResponse,
+        style: { zIndex },
       };
 
       console.log('Rendering rectangle:', rect.type, rect.id);
