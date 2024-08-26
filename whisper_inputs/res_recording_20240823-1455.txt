@@ -1,0 +1,1 @@
+It sounds like you're discussing the integration of reference images with the turntable point cloud. Utilizing a grid of reference images at various elevations could enhance the accuracy and detail of the point cloud representation. This approach might provide a more comprehensive view and improve the overall quality of the data.

@@ -1,0 +1,1 @@
+Speaker 1: So, I have this whole setup where it takes that, let's say it sends speaker 1, I have a whole setup where it will take those prompts, it will, or it will generate prompts for images and split them up into different ones, and then like pre-prompt them.

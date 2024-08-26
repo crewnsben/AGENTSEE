@@ -1,0 +1,1 @@
+Our project is an AI-assisted social media plug-in designed to enhance user interaction and engagement on platforms like Discord. It streamlines communication, provides personalized content recommendations, and fosters community building without the need for cumbersome log-ins or sign-ups.

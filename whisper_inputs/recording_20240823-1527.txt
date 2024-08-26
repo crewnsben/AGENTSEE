@@ -1,0 +1,1 @@
+Speaker 1: I was thinking about giving more priorities to the rendering, but now that I'm going to have full screens, I think I need to figure out how they're going to be interacting with Google. What could just be, like, your first editing process?
